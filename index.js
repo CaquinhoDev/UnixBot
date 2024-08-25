@@ -261,7 +261,7 @@ function formatUptime(uptime) {
 }
 
 function getMessageEnd() {
-  return "*\n\nPedro Henrique, vulgo Caquinho Zinho*\n*GitHub:* https://github.com/caquinhodev";
+  return "ミ★ *MagoBot JS 1.0* ★彡";
 }
 
 async function getSimSimiResponse(message) {
