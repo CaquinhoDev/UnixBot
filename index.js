@@ -63,7 +63,7 @@ async function startBot() {
     // Comando de ping com reação
     if (command === "ping") {
       const timestampReceived = Date.now(); // Timestamp do recebimento da resposta
-      const latency = timestampReceived - timestampSent; // Latência em ms
+      const latency = timestampReceived / timestampSent; // Latência em ms
 
       await sock.sendMessage(msg.key.remoteJid, {
         text: `*Pong!* 🏓\n\n⏳ *Tempo de resposta do bot foi de ${latency}ms*.\n\n${getMessageEnd()}`,
