@@ -63,7 +63,7 @@ async function startBot() {
     // Comando de ping com reação
     if (command === "ping") {
       const timestampReceived = Date.now(); // Timestamp do recebimento da resposta
-      const latency = timestampReceived / timestampSent; // Latência em ms
+      const latency = timestampReceived - timestampSent; // Latência em ms
 
       await sock.sendMessage(msg.key.remoteJid, {
         text: `*Pong!* 🏓\n\n⏳ *Tempo de resposta do bot foi de ${latency}ms*.\n\n${getMessageEnd()}`,
@@ -83,11 +83,17 @@ async function startBot() {
         await sock.sendMessage(msg.key.remoteJid, {
           text: `*Resultado:* ${result}\n\n${getMessageEnd()}`,
         });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "📊", key: msg.key }, // Reação para cálculo
+        });
       } catch (error) {
         await sock.sendMessage(msg.key.remoteJid, {
           text: `*Erro ao calcular a expressão:* ${
             error.message
           }\n\n${getMessageEnd()}`,
+        });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "❌", key: msg.key }, // Reação de erro para cálculo
         });
       }
       return;
@@ -111,9 +117,15 @@ async function startBot() {
               err.message
             }\n\n${getMessageEnd()}`,
           });
+          sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "❌", key: msg.key }, // Reação de erro para abrir aplicativo
+          });
         } else {
           sock.sendMessage(msg.key.remoteJid, {
             text: `${app} *foi aberto com sucesso!* 🎉\n\n${getMessageEnd()}`,
+          });
+          sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "✅", key: msg.key }, // Reação de sucesso para abrir aplicativo
           });
         }
       });
@@ -137,9 +149,15 @@ async function startBot() {
               err.message
             }\n\n${getMessageEnd()}`,
           });
+          sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "❌", key: msg.key }, // Reação de erro para desligar
+          });
         } else {
           sock.sendMessage(msg.key.remoteJid, {
             text: "*Computador será desligado!* 💻🔌\n\n" + getMessageEnd(),
+          });
+          sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "🔋", key: msg.key }, // Reação para desligar
           });
         }
       });
@@ -163,9 +181,15 @@ async function startBot() {
               err.message
             }\n\n${getMessageEnd()}`,
           });
+          sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "❌", key: msg.key }, // Reação de erro para reiniciar
+          });
         } else {
           sock.sendMessage(msg.key.remoteJid, {
             text: "*Computador será reiniciado!* 🔄\n\n" + getMessageEnd(),
+          });
+          sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "🔄", key: msg.key }, // Reação para reiniciar
           });
         }
       });
@@ -188,11 +212,17 @@ async function startBot() {
         await sock.sendMessage(msg.key.remoteJid, {
           text: responseText + `\n\n${getMessageEnd()}`,
         });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "🐥", key: msg.key }, // Reação para SimSimi
+        });
       } catch (error) {
         await sock.sendMessage(msg.key.remoteJid, {
           text: `*Erro ao se comunicar com a API SimSimi:* ${
             error.message
           }\n\n${getMessageEnd()}`,
+        });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "❌", key: msg.key }, // Reação de erro para SimSimi
         });
       }
       return;
@@ -204,92 +234,55 @@ async function startBot() {
       『 *𝐌𝐄𝐍𝐔* 』
       ╭════════════════════╯
        | *🤑 !calcular*
-       | *🤑 !simi* 
+       | *🤑 !abrir*
        | *🤑 !desligar*
        | *🤑 !reiniciar*
-       | *🤑 !criador* 
-       | *🤑 !dono*
-       | *🤑 !info*
-       | *🤑 !uptime*
-       | *🤑 !ping*
-      ╰════════════════════╮`;
+       | *🤑 !simi*
+      ╰════════════════════╯
+      `;
 
       await sock.sendMessage(msg.key.remoteJid, {
-        text: menu + `\n\n${getMessageEnd()}`,
+        text: menu,
       });
-      return;
-    }
-
-    // Comando de uptime
-    if (command === "uptime") {
-      const uptime = formatUptime(Date.now() - botStartTime);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `*O bot está online há ${uptime}.*\n\n${getMessageEnd()}`,
-      });
-      return;
-    }
-
-    // Comando de criador
-    if (command === "criador") {
-      const creatorInfo = `*Pedro Henrique, vulgo Caquinho Zinho*\n\n*GitHub:* https://github.com/caquinhodev`;
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: creatorInfo + `\n\n${getMessageEnd()}`,
-      });
-      return;
-    }
-
-    // Comando de dono
-    if (command === "dono") {
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: `*O dono do bot é Pedro Henrique (Caquinho Zinho).* \n*Número:* ${OWNER_PHONE_NUMBER}\n\n${getMessageEnd()}`,
+        react: { text: "📜", key: msg.key }, // Reação para menu
       });
       return;
     }
   });
-}
 
-function normalizeCommand(command) {
-  return command.trim().toLowerCase();
-}
-
-function formatUptime(uptime) {
-  const days = Math.floor(uptime / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((uptime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  const minutes = Math.floor((uptime % (60 * 60 * 1000)) / (60 * 1000));
-  const seconds = Math.floor((uptime % (60 * 1000)) / 1000);
-  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-}
-
-function getMessageEnd() {
-  return "ミ★ *MagoBot JS 1.0* ★彡";
-}
-
-async function getSimSimiResponse(message) {
-  const response = await axios.post(SIMI_API_URL, {
-    lc: "pt",
-    text: message,
-  });
-  return response.data.response;
-}
-
-const OWNER_NAME_VARIANTS = [
-  "Pedro",
-  "Pedro Henrique",
-  "Caquinho",
-  "Caquinho Zinho",
-];
-
-function handleNameMention(message, sock, from) {
-  // Verifica se a mensagem contém alguma variação do seu nome
-  const containsOwnerName = OWNER_NAME_VARIANTS.some((name) =>
-    message.toLowerCase().includes(name.toLowerCase())
-  );
-
-  if (containsOwnerName) {
-    sock.sendMessage(from, {
-      text: "*O que você está falando do meu criador?? 🤨*",
+  // Função para obter resposta da API SimSimi
+  async function getSimSimiResponse(message) {
+    const response = await axios.post(SIMI_API_URL, {
+      lc: "pt",
+      text: message,
     });
+
+    return response.data.message;
   }
+
+  // Função para normalizar o comando
+  function normalizeCommand(command) {
+    return command.toLowerCase();
+  }
+
+  // Função para formatar o uptime
+  function formatUptime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const days = Math.floor(totalSeconds / (3600 * 24));
+    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${days}dias ${hours}horas ${minutes}minutos ${seconds}segundos`;
+  }
+
+  // Função para obter mensagem de finalização
+  function getMessageEnd() {
+    return "ミ★ MagoBot JS 1.0 ★彡";
+  }
+
+  return sock;
 }
 
-startBot();
+startBot().catch(console.error);
