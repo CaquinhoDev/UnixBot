@@ -145,6 +145,32 @@ async function startBot() {
       return;
     }
 
+    // Comando de menu
+    if (command === "menu") {
+      const menu = `༒W̷E̷L̷C̷O̷M̷E̷༒
+      『 𝐌𝐄𝐍𝐔 』
+    ╭════════════════════╯
+    | ೈ፝͜͡🤑 !calcular
+    | ೈ፝͜͡🤑 !simi 
+    | ೈ፝͜͡🤑 !desligar
+    | ೈ፝͜͡🤑 !reinciar
+    | ೈ፝͜͡🤑 !uptime
+    | ೈ፝͜͡🤑 !ping
+    | ೈ፝͜͡🤑 !dono
+    | ೈ፝͜͡🤑 !criador
+    | ೈ፝͜͡🤑 !info
+    | ೈ፝͜͡🤑 !menu
+    ╰════════════════════╮
+      `;
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: menu + `\n\n${getMessageEnd()}`,
+      });
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "📜", key: msg.key },
+      });
+      return;
+    }
+
     // Comando de dono
     if (command === "dono") {
       await sock.sendMessage(msg.key.remoteJid, {
@@ -339,18 +365,6 @@ async function getSimSimiResponse(message) {
       `Não foi possível obter uma resposta do SimSimi: ${error.message}`
     );
   }
-}
-
-const nomes = ["pedro", "pedro henrique", "caquinho"]; // Lista de nomes para verificar
-
-if (nomes.some((nome) => text.toLowerCase().includes(nome))) {
-  await sock.sendMessage(msg.key.remoteJid, {
-    text: "O que você está falando do meu criador?? 🤨\n\n" + getMessageEnd(),
-  });
-  await sock.sendMessage(msg.key.remoteJid, {
-    react: { text: "🤨", key: msg.key },
-  });
-  return;
 }
 
 function getMessageEnd() {
