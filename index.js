@@ -1,3 +1,4 @@
+require("dotenv").config(); // Carrega as variáveis de ambiente do arquivo .env
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -8,6 +9,10 @@ const axios = require("axios");
 const math = require("mathjs"); // Importando a biblioteca mathjs
 
 const PREFIX = "!";
+const SIMI_API_URL = "https://api.simsimi.vn/v1/simtalk"; // URL da API SimSimi
+
+// Obtendo o número de telefone do dono do arquivo .env
+const OWNER_PHONE_NUMBER = process.env.OWNER_PHONE_NUMBER;
 
 let botStartTime = Date.now(); // Timestamp inicial para uptime
 
@@ -52,13 +57,16 @@ async function startBot() {
     );
     const timestampSent = Date.now(); // Timestamp do envio da mensagem
 
+    // Função para verificar se o usuário é o dono
+    const isOwner = msg.key.remoteJid === OWNER_PHONE_NUMBER;
+
     // Comando de ping com reação
     if (command === "ping") {
       const timestampReceived = Date.now(); // Timestamp do recebimento da resposta
       const latency = timestampReceived - timestampSent; // Latência em ms
 
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `Pong! 🏓\n\n⏳ Tempo de resposta do bot foi de *${latency}ms*.\n\n${getMessageEnd()}`,
+        text: `*Pong!* 🏓\n\n⏳ *Tempo de resposta do bot foi de ${latency}ms*.\n\n${getMessageEnd()}`,
       });
       await sock.sendMessage(msg.key.remoteJid, {
         react: { text: "🏓", key: msg.key },
@@ -73,210 +81,141 @@ async function startBot() {
       try {
         const result = math.evaluate(expression);
         await sock.sendMessage(msg.key.remoteJid, {
-          text: `Resultado: ${result}\n\n${getMessageEnd()}`,
-        });
-        await sock.sendMessage(msg.key.remoteJid, {
-          react: { text: "🧮", key: msg.key },
+          text: `*Resultado:* ${result}\n\n${getMessageEnd()}`,
         });
       } catch (error) {
         await sock.sendMessage(msg.key.remoteJid, {
-          text: `Erro ao calcular a expressão: ${
+          text: `*Erro ao calcular a expressão:* ${
             error.message
           }\n\n${getMessageEnd()}`,
-        });
-        await sock.sendMessage(msg.key.remoteJid, {
-          react: { text: "❌", key: msg.key },
         });
       }
       return;
     }
 
-    // Comando para abrir aplicativos no Windows
+    // Comando para abrir aplicativos no Windows (restrito ao dono)
     if (command.startsWith("abrir")) {
+      if (!isOwner) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text:
+            "*Você não tem permissão para usar este comando.*\n\n" +
+            getMessageEnd(),
+        });
+        return;
+      }
       const app = command.split(" ")[1];
       exec(app, (err) => {
         if (err) {
           sock.sendMessage(msg.key.remoteJid, {
-            text: `Erro ao abrir ${app}: ${err.message}\n\n${getMessageEnd()}`,
-          });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "❌", key: msg.key },
+            text: `*Erro ao abrir ${app}:* ${
+              err.message
+            }\n\n${getMessageEnd()}`,
           });
         } else {
           sock.sendMessage(msg.key.remoteJid, {
-            text: `${app} foi aberto com sucesso! 🎉\n\n${getMessageEnd()}`,
-          });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "🎉", key: msg.key },
+            text: `${app} *foi aberto com sucesso!* 🎉\n\n${getMessageEnd()}`,
           });
         }
       });
       return;
     }
 
-    // Comando para desligar o computador
+    // Comando para desligar o computador (restrito ao dono)
     if (command === "desligar") {
+      if (!isOwner) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text:
+            "*Você não tem permissão para usar este comando.*\n\n" +
+            getMessageEnd(),
+        });
+        return;
+      }
       exec("shutdown /s /f /t 0", (err) => {
         if (err) {
           sock.sendMessage(msg.key.remoteJid, {
-            text: `Erro ao desligar o computador: ${
+            text: `*Erro ao desligar o computador:* ${
               err.message
             }\n\n${getMessageEnd()}`,
           });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "❌", key: msg.key },
-          });
         } else {
           sock.sendMessage(msg.key.remoteJid, {
-            text: "Computador será desligado! 💻🔌\n\n" + getMessageEnd(),
-          });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "💻", key: msg.key },
+            text: "*Computador será desligado!* 💻🔌\n\n" + getMessageEnd(),
           });
         }
       });
       return;
     }
 
-    // Comando para reiniciar o computador
+    // Comando para reiniciar o computador (restrito ao dono)
     if (command === "reiniciar") {
+      if (!isOwner) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text:
+            "*Você não tem permissão para usar este comando.*\n\n" +
+            getMessageEnd(),
+        });
+        return;
+      }
       exec("shutdown /r /f /t 0", (err) => {
         if (err) {
           sock.sendMessage(msg.key.remoteJid, {
-            text: `Erro ao reiniciar o computador: ${
+            text: `*Erro ao reiniciar o computador:* ${
               err.message
             }\n\n${getMessageEnd()}`,
           });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "❌", key: msg.key },
-          });
         } else {
           sock.sendMessage(msg.key.remoteJid, {
-            text: "Computador será reiniciado! 🔄\n\n" + getMessageEnd(),
-          });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "🔄", key: msg.key },
+            text: "*Computador será reiniciado!* 🔄\n\n" + getMessageEnd(),
           });
         }
       });
       return;
     }
 
-    // Função para obter resposta do SimSimi
-    async function getSimSimiResponse(query) {
-      let data = new FormData();
-      data.append("lc", "pt");
-      data.append("key", ""); // Substitua esse vazio pela sua chave da API SimSimi caso seja necessário!
-      data.append("text", query);
-
-      let config = {
-        method: "post",
-        url: "https://api.simsimi.vn/v1/simtalk",
-        headers: {
-          ...data.getHeaders(),
-        },
-        data: data,
-      };
-
-      try {
-        const response = await axios.request(config);
-
-        // Verifica se o status é diferente de 200
-        if (response.status !== 200) {
-          console.error("Error:", response.statusText);
-        }
-
-        // Verifica se a resposta contém a mensagem
-        if (
-          response.data &&
-          response.data.message &&
-          response.data.message !== ""
-        ) {
-          return response.data.message;
-        } else {
-          console.error("Error: No valid response message found.");
-          return "Desculpe, não consegui entender sua mensagem."; // Mensagem padrão caso não encontre uma resposta válida
-        }
-      } catch (error) {
-        // Verifica se o erro contém uma resposta com uma mensagem
-        if (
-          error.response &&
-          error.response.data &&
-          error.response.data.message
-        ) {
-          console.log(JSON.stringify(error.response.data)); // Exibir a resposta de erro completa da API
-          return error.response.data.message;
-        }
-
-        console.error("Error:", error);
-        return "Desculpe, houve um erro ao processar sua mensagem."; // Mensagem padrão para outros erros
-      }
-    }
-
-    // Integrando a função no comando simi
-    sock.ev.on("messages.upsert", async ({ messages }) => {
-      const msg = messages[0];
-      if (!msg.message || msg.key.fromMe) return;
-
-      const text =
-        msg.message.conversation || msg.message.extendedTextMessage?.text;
-      if (!text || !text.startsWith(PREFIX)) return;
-
-      const command = normalizeCommand(
-        text.slice(PREFIX.length).trim().toLowerCase()
-      );
-      const timestampSent = Date.now(); // Timestamp do envio da mensagem
-
-      // Comando SimSimi
-      if (command.startsWith("simi")) {
-        const message = text.slice(PREFIX.length + 4).trim();
-        if (!message) {
-          await sock.sendMessage(msg.key.remoteJid, {
-            text: `Por favor, forneça uma mensagem para o SimSimi.\n\n${getMessageEnd()}`,
-          });
-          return;
-        }
-
-        try {
-          const responseText = await getSimSimiResponse(message);
-
-          await sock.sendMessage(msg.key.remoteJid, {
-            text: responseText + `\n\n${getMessageEnd()}`,
-          });
-        } catch (error) {
-          await sock.sendMessage(msg.key.remoteJid, {
-            text: `Erro ao se comunicar com a API SimSimi: ${
-              error.message
-            }\n\n${getMessageEnd()}`,
-          });
-        }
+    // Comando SimSimi
+    if (command.startsWith("simi")) {
+      const message = text.slice(PREFIX.length + 4).trim();
+      if (!message) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: `*Por favor, forneça uma mensagem para o SimSimi.*\n\n${getMessageEnd()}`,
+        });
         return;
       }
 
-      // ... outros comandos
-    });
+      try {
+        const responseText = await getSimSimiResponse(message);
+
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: responseText + `\n\n${getMessageEnd()}`,
+        });
+      } catch (error) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: `*Erro ao se comunicar com a API SimSimi:* ${
+            error.message
+          }\n\n${getMessageEnd()}`,
+        });
+      }
+      return;
+    }
 
     // Comando de menu
     if (command === "menu") {
-      const menu = `༒W̷E̷L̷C̷O̷M̷E̷༒
-        『 𝐌𝐄𝐍𝐔 』
+      const menu = `*༒W̷E̷L̷C̷O̷M̷E̷༒*
+      『 *𝐌𝐄𝐍𝐔* 』
       ╭════════════════════╯
-       | ೈ፝͜͡🤑 !calcular
-       | ೈ፝͜͡🤑 !simi 
-       | ೈ፝͜͡🤑 !desligar
-       | ೈ፝͜͡🤑 !reiniciar
-       | ೈ፝͜͡🤑 !criador 
-       | ೈ፝͜͡🤑 !dono
-       | ೈ፝͜͡🤑 !info
-       | ೈ፝͜͡🤑 !uptime
-       | ೈ፝͜͡🤑 !ping
+       | *🤑 !calcular*
+       | *🤑 !simi* 
+       | *🤑 !desligar*
+       | *🤑 !reiniciar*
+       | *🤑 !criador* 
+       | *🤑 !dono*
+       | *🤑 !info*
+       | *🤑 !uptime*
+       | *🤑 !ping*
       ╰════════════════════╮`;
 
       await sock.sendMessage(msg.key.remoteJid, {
         text: menu + `\n\n${getMessageEnd()}`,
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "📜", key: msg.key },
       });
       return;
     }
@@ -285,23 +224,16 @@ async function startBot() {
     if (command === "uptime") {
       const uptime = formatUptime(Date.now() - botStartTime);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `O bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "⏳", key: msg.key },
+        text: `*O bot está online há ${uptime}.*\n\n${getMessageEnd()}`,
       });
       return;
     }
 
     // Comando de criador
     if (command === "criador") {
+      const creatorInfo = `*Pedro Henrique, vulgo Caquinho Zinho*\n\n*GitHub:* https://github.com/caquinhodev`;
       await sock.sendMessage(msg.key.remoteJid, {
-        text:
-          "Eu sou o bot criado por *Pedro Henrique*, vulgo *Caquinho Dev*. 👨‍💻\n\n" +
-          getMessageEnd(),
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "👨‍💻", key: msg.key },
+        text: creatorInfo + `\n\n${getMessageEnd()}`,
       });
       return;
     }
@@ -309,63 +241,69 @@ async function startBot() {
     // Comando de dono
     if (command === "dono") {
       await sock.sendMessage(msg.key.remoteJid, {
-        text: "O dono do bot é *Pedro Henrique*. 👑\n\n" + getMessageEnd(),
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "👑", key: msg.key },
+        text: `*O dono do bot é Pedro Henrique (Caquinho Zinho).* \n*Número:* ${OWNER_PHONE_NUMBER}\n\n${getMessageEnd()}`,
       });
       return;
     }
-
-    // Comando de info
-    if (command === "info") {
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: `Informações sobre o bot:\n\n- *Bot: MagoBot\n- Versão: 1.0.0\n- Criador: Pedro Henrique*\n\n${getMessageEnd()}`,
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "ℹ️", key: msg.key },
-      });
-      return;
-    }
-
-    const nomes = ["pedro", "pedro henrique", "caquinho"]; // Lista de nomes para verificar
-
-    if (nomes.some((nome) => text.toLowerCase().includes(nome))) {
-      await sock.sendMessage(msg.key.remoteJid, {
-        text:
-          "O que você está falando do meu criador?? 🤨\n\n" + getMessageEnd(),
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "🤨", key: msg.key },
-      });
-      return;
-    }
-
-    // Comando não reconhecido
-    await sock.sendMessage(msg.key.remoteJid, {
-      text: `Comando não reconhecido. Use !menu para ver a lista de comandos disponíveis.\n\n${getMessageEnd()}`,
-    });
-    await sock.sendMessage(msg.key.remoteJid, {
-      react: { text: "❓", key: msg.key },
-    });
   });
+}
 
-  function normalizeCommand(command) {
-    return command.replace(/\s+/g, " ").trim(); // Remove espaços extras
-  }
+function normalizeCommand(command) {
+  return command.trim().toLowerCase();
+}
 
-  function formatUptime(ms) {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
+function formatUptime(uptime) {
+  const days = Math.floor(uptime / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((uptime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const minutes = Math.floor((uptime % (60 * 60 * 1000)) / (60 * 1000));
+  const seconds = Math.floor((uptime % (60 * 1000)) / 1000);
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
 
-    return `${days}d ${hours % 24}h ${minutes % 60}m ${seconds % 60}s`;
-  }
+function getMessageEnd() {
+  return "*\n\nPedro Henrique, vulgo Caquinho Zinho*\n*GitHub:* https://github.com/caquinhodev";
+}
 
-  function getMessageEnd() {
-    return "ミ★ MagoBot JS 1.0 ★彡";
+async function getSimSimiResponse(message) {
+  const response = await axios.post(SIMI_API_URL, {
+    lc: "pt",
+    text: message,
+  });
+  return response.data.response;
+}
+
+const OWNER_NAME_VARIANTS = [
+  "Pedro",
+  "Pedro Henrique",
+  "Caquinho",
+  "Caquinho Zinho",
+];
+
+function handleNameMention(message, sock, from) {
+  // Verifica se a mensagem contém alguma variação do seu nome
+  const containsOwnerName = OWNER_NAME_VARIANTS.some((name) =>
+    message.toLowerCase().includes(name.toLowerCase())
+  );
+
+  if (containsOwnerName) {
+    sock.sendMessage(from, {
+      text: "*O que você está falando do meu criador?? 🤨*",
+    });
   }
 }
+
+// Exemplo de como usar a função
+// No seu código principal, substitua pelo local apropriado para chamar a função
+sock.ev.on("messages.upsert", async ({ messages }) => {
+  const msg = messages[0];
+  if (!msg.message || msg.key.fromMe) return;
+
+  const text =
+    msg.message.conversation || msg.message.extendedTextMessage?.text;
+
+  if (text) {
+    handleNameMention(text, sock, msg.key.remoteJid);
+  }
+});
 
 startBot();
