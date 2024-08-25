@@ -63,7 +63,7 @@ async function startBot() {
     // Comando de ping com reação
     if (command === "ping") {
       const timestampReceived = Date.now(); // Timestamp do recebimento da resposta
-      const latency = timestampReceived - timestampSent; // Latência em ms
+      const latency = timestampReceived / timestampSent; // Latência em ms
 
       await sock.sendMessage(msg.key.remoteJid, {
         text: `*Pong!* 🏓\n\n⏳ *Tempo de resposta do bot foi de ${latency}ms*.\n\n${getMessageEnd()}`,
@@ -128,6 +128,41 @@ async function startBot() {
             react: { text: "✅", key: msg.key }, // Reação de sucesso para abrir aplicativo
           });
         }
+      });
+      return;
+    }
+
+    // Comando de criador
+    if (command === "criador") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text:
+          "Eu sou o bot criado por *Pedro Henrique*, vulgo *Caquinho Dev*. 👨‍💻\n\n" +
+          getMessageEnd(),
+      });
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "👨‍💻", key: msg.key },
+      });
+      return;
+    }
+
+    // Comando de dono
+    if (command === "dono") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "O dono do bot é *Pedro Henrique*. 👑\n\n" + getMessageEnd(),
+      });
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "👑", key: msg.key },
+      });
+      return;
+    }
+
+    // Comando de info
+    if (command === "info") {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `Informações sobre o bot:\n\n- *Bot: MagoBot*\n- *Versão: 1.0.0*\n- *Criador: Pedro Henrique*\n\n${getMessageEnd()}`,
+      });
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "ℹ️", key: msg.key },
       });
       return;
     }
@@ -228,61 +263,98 @@ async function startBot() {
       return;
     }
 
-    // Comando de menu
-    if (command === "menu") {
-      const menu = `*༒W̷E̷L̷C̷O̷M̷E̷༒*
-      『 *𝐌𝐄𝐍𝐔* 』
-      ╭════════════════════╯
-       | *🤑 !calcular*
-       | *🤑 !abrir*
-       | *🤑 !desligar*
-       | *🤑 !reiniciar*
-       | *🤑 !simi*
-      ╰════════════════════╯
-      `;
-
+    // Comando de abrir grupo
+    if (command === "abrir") {
+      if (!isOwner) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text:
+            "*Você não tem permissão para usar este comando.*\n\n" +
+            getMessageEnd(),
+        });
+        return;
+      }
+      // Abre o grupo
       await sock.sendMessage(msg.key.remoteJid, {
-        text: menu,
-      });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "📜", key: msg.key }, // Reação para menu
+        text: "*O grupo foi aberto!* 🔓\n\n" + getMessageEnd(),
       });
       return;
     }
+
+    // Comando de uptime
+    if (command === "uptime") {
+      const uptime = formatUptime(Date.now() - botStartTime);
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `O bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
+      });
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "⏳", key: msg.key },
+      });
+
+      // Comando de fechar grupo
+      if (command === "fechar") {
+        if (!isOwner) {
+          await sock.sendMessage(msg.key.remoteJid, {
+            text:
+              "*Você não tem permissão para usar este comando.*\n\n" +
+              getMessageEnd(),
+          });
+          return;
+        }
+        // Fecha o grupo
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: "*O grupo foi fechado!* 🔒\n\n" + getMessageEnd(),
+        });
+        return;
+      }
+    }
   });
 
-  // Função para obter resposta da API SimSimi
-  async function getSimSimiResponse(message) {
+  console.log("Bot started!");
+}
+
+function normalizeCommand(command) {
+  return command.trim().toLowerCase();
+}
+
+// Função para formatar o uptime
+function formatUptime(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / (3600 * 24));
+  const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `*${days} dias ${hours} horas ${minutes} minutos ${seconds} segundos*`;
+}
+
+async function getSimSimiResponse(message) {
+  try {
     const response = await axios.post(SIMI_API_URL, {
       lc: "pt",
       text: message,
     });
-
-    return response.data.message;
+    return response.data.contents;
+  } catch (error) {
+    throw new Error(
+      `Não foi possível obter uma resposta do SimSimi: ${error.message}`
+    );
   }
-
-  // Função para normalizar o comando
-  function normalizeCommand(command) {
-    return command.toLowerCase();
-  }
-
-  // Função para formatar o uptime
-  function formatUptime(ms) {
-    const totalSeconds = Math.floor(ms / 1000);
-    const days = Math.floor(totalSeconds / (3600 * 24));
-    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return `${days}dias ${hours}horas ${minutes}minutos ${seconds}segundos`;
-  }
-
-  // Função para obter mensagem de finalização
-  function getMessageEnd() {
-    return "ミ★ MagoBot JS 1.0 ★彡";
-  }
-
-  return sock;
 }
 
-startBot().catch(console.error);
+const nomes = ["pedro", "pedro henrique", "caquinho"]; // Lista de nomes para verificar
+
+if (nomes.some((nome) => text.toLowerCase().includes(nome))) {
+  await sock.sendMessage(msg.key.remoteJid, {
+    text: "O que você está falando do meu criador?? 🤨\n\n" + getMessageEnd(),
+  });
+  await sock.sendMessage(msg.key.remoteJid, {
+    react: { text: "🤨", key: msg.key },
+  });
+  return;
+}
+
+function getMessageEnd() {
+  return "ミ★ *MagoBot JS 1.1* ★彡";
+}
+
+startBot();
