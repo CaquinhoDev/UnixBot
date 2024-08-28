@@ -5,9 +5,11 @@ const {
   DisconnectReason,
 } = require("@whiskeysockets/baileys");
 const { exec } = require("child_process");
+const { buscarImagem } = require("./unsplash");
 const axios = require("axios");
 const math = require("mathjs"); // Importando a biblioteca mathjs
-
+const translate = require("@vitalets/google-translate-api");
+const fs = require("fs");
 const PREFIX = "!";
 const SIMI_API_URL = "https://api.simsimi.vn/v1/simtalk"; // URL da API SimSimi
 
@@ -21,6 +23,7 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     printQRInTerminal: true,
+    //logger: console,
   });
 
   sock.ev.on("creds.update", saveCreds);
@@ -162,6 +165,10 @@ async function startBot() {
     | ೈ፝͜͡🤑 !fechar
     | ೈ፝͜͡🤑 !abrir
     | ೈ፝͜͡🤑 !menu
+    | ೈ፝͜͡🤑 !imagem
+    | ೈ፝͜͡🤑 !dado
+    | ೈ፝͜͡🤑 !moeda
+    | ೈ፝͜͡🤑 !adivinha
     ╰════════════════════╮
       `;
       await sock.sendMessage(msg.key.remoteJid, {
@@ -259,6 +266,84 @@ async function startBot() {
       return;
     }
 
+    if (command === "dado") {
+      const diceRoll = Math.floor(Math.random() * 6) + 1;
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `🎲 Você rolou um *${diceRoll}*!\n\n${getMessageEnd()}`,
+      });
+    }
+
+    if (command === "moeda") {
+      // Gera um número aleatório entre 0 e 1
+      const result = Math.random() < 0.5 ? "cara" : "coroa";
+
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `🪙 A moeda caiu em... *${result}*!\n\n${getMessageEnd()}`,
+      });
+    }
+
+    if (command === "adivinha") {
+      // Define o intervalo de números para adivinhar
+      const min = 1;
+      const max = 1000000;
+      sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "🤔", key: msg.key }, // Reação para reiniciar
+      });
+
+      // O bot escolhe um número aleatório dentro do intervalo
+      const guessedNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `🤔 Estou pensando no número... Será que é *${guessedNumber}*?\n\n${getMessageEnd()}`,
+      });
+    }
+
+    //const { buscarImagem } = require("./unsplash"); // Importa a função do arquivo unsplash.js
+
+    // Adicione isso ao seu comando de !imagem
+    if (command.startsWith("imagem")) {
+      const keyword = text.slice(PREFIX.length + 7).trim(); // Remove PREFIX e 'imagem'
+
+      if (!keyword) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: `*Por favor, forneça uma palavra-chave para a busca de imagem.*\n\n${getMessageEnd()}`,
+        });
+        return;
+      }
+
+      try {
+        const imageBuffer = await buscarImagem(keyword);
+
+        // Salve o buffer da imagem em um arquivo temporário
+        const tempFilePath = `./temp_image_${Date.now()}.jpg`;
+        const fs = require("fs");
+        fs.writeFileSync(tempFilePath, imageBuffer);
+
+        // Envie a imagem como mídia
+        await sock.sendMessage(msg.key.remoteJid, {
+          image: { url: tempFilePath },
+          caption: `Imagem relacionada a "${keyword}"\n\n${getMessageEnd()}`,
+        });
+
+        // Remove o arquivo temporário após o envio
+        fs.unlinkSync(tempFilePath);
+
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "🖼️", key: msg.key }, // Reação para imagem
+        });
+      } catch (error) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: `*Erro ao buscar a imagem:* ${
+            error.message
+          }\n\n${getMessageEnd()}`,
+        });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "❌", key: msg.key }, // Reação de erro para imagem
+        });
+      }
+      return;
+    }
+
     // Comando SimSimi
     if (command.startsWith("simi")) {
       const message = text.slice(PREFIX.length + 4).trim();
@@ -312,10 +397,10 @@ async function startBot() {
     if (command === "uptime") {
       const uptime = formatUptime(Date.now() - botStartTime);
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `O bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
+        text: `🕐 O bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
       });
       await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "⏳", key: msg.key },
+        react: { text: "🕐", key: msg.key },
       });
 
       // Comando de fechar grupo
@@ -352,7 +437,7 @@ function formatUptime(ms) {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  return `*${days} dias ${hours} horas ${minutes} minutos ${seconds} segundos*`;
+  return `${days} dias ${hours} horas ${minutes} minutos ${seconds} segundos`;
 }
 
 async function getSimSimiResponse(message) {
