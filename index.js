@@ -103,7 +103,7 @@ async function startBot() {
     }
 
     // Comando para abrir aplicativos no Windows (restrito ao dono)
-    if (command.startsWith("abrir")) {
+    if (command.startsWith("app")) {
       if (!isOwner) {
         await sock.sendMessage(msg.key.remoteJid, {
           text:
@@ -155,8 +155,9 @@ async function startBot() {
     ╭════════════════════╯
     | ೈ፝͜͡🤑 !calcular
     | ೈ፝͜͡🤑 !simi 
-    | ೈ፝͜͡🤑 !desligar
-    | ೈ፝͜͡🤑 !reinciar
+    | ೈ፝͜͡🤑 !desligar (dono)
+    | ೈ፝͜͡🤑 !reinciar (dono)
+    | ೈ፝͜͡🤑 !app (dono)
     | ೈ፝͜͡🤑 !uptime
     | ೈ፝͜͡🤑 !ping
     | ೈ፝͜͡🤑 !dono
@@ -422,7 +423,7 @@ async function startBot() {
     }
   });
 
-  console.log("Bot started!");
+  console.log("BOT LIGADO!");
 }
 
 function normalizeCommand(command) {
@@ -437,7 +438,7 @@ function formatUptime(ms) {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  return `${days} dias ${hours} horas ${minutes} minutos ${seconds} segundos`;
+  return `${days} dias ${hours} horas ${minutes} minutos e ${seconds} segundos`;
 }
 
 async function getSimSimiResponse(message) {
