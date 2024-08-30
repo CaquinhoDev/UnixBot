@@ -7,6 +7,7 @@ const {
 const { exec } = require("child_process");
 const { buscarImagem } = require("./unsplash");
 const axios = require("axios");
+const FormData = require("form-data");
 const math = require("mathjs"); // Importando a biblioteca mathjs
 const translate = require("@vitalets/google-translate-api");
 const fs = require("fs");
@@ -163,8 +164,8 @@ async function startBot() {
     | ೈ፝͜͡🤑 !dono
     | ೈ፝͜͡🤑 !criador
     | ೈ፝͜͡🤑 !info
-    | ೈ፝͜͡🤑 !fechar
-    | ೈ፝͜͡🤑 !abrir
+    | ೈ፝͜͡🤑 !fechar (admin)
+    | ೈ፝͜͡🤑 !abrir (admin)
     | ೈ፝͜͡🤑 !menu
     | ೈ፝͜͡🤑 !imagem
     | ೈ፝͜͡🤑 !dado
@@ -286,7 +287,7 @@ async function startBot() {
     if (command === "adivinha") {
       // Define o intervalo de números para adivinhar
       const min = 1;
-      const max = 1000000;
+      const max = 100;
       sock.sendMessage(msg.key.remoteJid, {
         react: { text: "🤔", key: msg.key }, // Reação para reiniciar
       });
@@ -345,6 +346,58 @@ async function startBot() {
       return;
     }
 
+    // Função para fazer a requisição à API do SimSimi
+    async function getSimSimiResponse(query) {
+      let data = new FormData();
+      data.append("lc", "pt");
+      data.append("key", ""); // Substitua esse vazio pela sua chave da API SimSimi se necessário
+      data.append("text", query);
+
+      let config = {
+        method: "post",
+        url: "https://api.simsimi.vn/v1/simtalk",
+        headers: {
+          ...data.getHeaders(),
+        },
+        data: data,
+      };
+
+      try {
+        const response = await axios.request(config);
+
+        // Verifica se o status é diferente de 200
+        if (response.status !== 200) {
+          console.error("Error:", response.statusText);
+          return "Desculpe, não consegui entender sua mensagem."; // Mensagem padrão para status não 200
+        }
+
+        // Verifica se a resposta contém a mensagem
+        if (
+          response.data &&
+          response.data.message &&
+          response.data.message !== ""
+        ) {
+          return response.data.message;
+        } else {
+          console.error("Error: No valid response message found.");
+          return "Desculpe, não consegui entender sua mensagem."; // Mensagem padrão caso não encontre uma resposta válida
+        }
+      } catch (error) {
+        // Verifica se o erro contém uma resposta com uma mensagem
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message
+        ) {
+          console.log(JSON.stringify(error.response.data)); // Exibir a resposta de erro completa da API
+          return error.response.data.message;
+        }
+
+        console.error("Error:", error);
+        return "Desculpe, houve um erro ao processar sua mensagem."; // Mensagem padrão para outros erros
+      }
+    }
+
     // Comando SimSimi
     if (command.startsWith("simi")) {
       const message = text.slice(PREFIX.length + 4).trim();
@@ -374,7 +427,6 @@ async function startBot() {
           react: { text: "❌", key: msg.key }, // Reação de erro para SimSimi
         });
       }
-      return;
     }
 
     // Comando de abrir grupo
@@ -387,7 +439,22 @@ async function startBot() {
         });
         return;
       }
+
+      const botAdmin = await isBotAdmin(msg.key.remoteJid);
+      if (!botAdmin) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text:
+            "*Não posso abrir o grupo porque não sou administrador.*\n\n" +
+            getMessageEnd(),
+        });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "❌", key: msg.key }, // Reação de erro
+        });
+        return;
+      }
+
       // Abre o grupo
+      await sock.groupSettingUpdate(msg.key.remoteJid, "not_announcement");
       await sock.sendMessage(msg.key.remoteJid, {
         text: "*O grupo foi aberto!* 🔓\n\n" + getMessageEnd(),
       });
@@ -414,7 +481,22 @@ async function startBot() {
           });
           return;
         }
+
+        const botAdmin = await isBotAdmin(msg.key.remoteJid);
+        if (!botAdmin) {
+          await sock.sendMessage(msg.key.remoteJid, {
+            text:
+              "*Não posso fechar o grupo porque não sou administrador.*\n\n" +
+              getMessageEnd(),
+          });
+          await sock.sendMessage(msg.key.remoteJid, {
+            react: { text: "❌", key: msg.key }, // Reação de erro
+          });
+          return;
+        }
+
         // Fecha o grupo
+        await sock.groupSettingUpdate(msg.key.remoteJid, "announcement");
         await sock.sendMessage(msg.key.remoteJid, {
           text: "*O grupo foi fechado!* 🔒\n\n" + getMessageEnd(),
         });
@@ -422,7 +504,6 @@ async function startBot() {
       }
     }
   });
-
   console.log("BOT LIGADO!");
 }
 

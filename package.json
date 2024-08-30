@@ -15,6 +15,7 @@
     "@whiskeysockets/baileys": "github:juniorkrz/Baileys",
     "axios": "^1.7.5",
     "dotenv": "^16.4.5",
+    "form-data": "^4.0.0",
     "math.js": "^1.1.46",
     "mathjs": "^13.0.3",
     "pino": "^9.3.2",
