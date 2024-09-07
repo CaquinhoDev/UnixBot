@@ -1,0 +1,19 @@
+{
+  "calcular": "Executa cálculos matemáticos",
+  "simi": "Conversa com o bot usando SimSimi",
+  "desligar": "Desliga o bot (somente dono)",
+  "reiniciar": "Reinicia o bot (somente dono)",
+  "app": "Abre aplicativos (somente dono)",
+  "uptime": "Mostra o tempo de atividade do bot",
+  "ping": "Verifica a latência do bot",
+  "dono": "Mostra informações sobre o dono do bot",
+  "criador": "Mostra informações sobre o criador do bot",
+  "info": "Mostra informações sobre o bot",
+  "fechar": "Fecha o grupo (somente admin)",
+  "abrir": "Abre o grupo (somente admin)",
+  "menu": "Mostra o menu de comandos",
+  "imagem": "Envia uma imagem",
+  "dado": "Rola um dado",
+  "moeda": "Joga uma moeda",
+  "adivinha": "Joga o jogo de adivinhação"
+}

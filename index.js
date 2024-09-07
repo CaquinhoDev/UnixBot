@@ -64,18 +64,86 @@ async function startBot() {
     // Função para verificar se o usuário é o dono
     const isOwner = msg.key.remoteJid === OWNER_PHONE_NUMBER;
 
-    // Comando de ping com reação
-    if (command === "ping") {
-      const timestampReceived = Date.now(); // Timestamp do recebimento da resposta
-      const latency = timestampReceived / timestampSent; // Latência em ms
+    const messageContent =
+      msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+    // const command = messageContent.split(" ")[0].toLowerCase().substring(1);
+    const args = messageContent.split(" ").slice(1);
 
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: `*Pong!* 🏓\n\n⏳ *Tempo de resposta do bot foi de ${latency}ms*.\n\n${getMessageEnd()}`,
-      });
+    // Verifica se o bot é administrador
+    const isAdmin = msg.key.participant ? true : false; // Adapte isso conforme necessário
+
+    // Função para gerar uma resposta criativa com base na latência
+    function getPingResponse(latency) {
+      if (latency < 50) {
+        return `*Estou mais rápido que um raio* ⚡\n*Tempo de resposta*: ${latency}ms`;
+      } else if (latency < 150) {
+        return `*Hoje eu tô cansado* 😴\n*Tempo de resposta*: ${latency}ms`;
+      } else {
+        return `*Estou dormindo* 💤\n*Tempo de resposta*: ${latency}ms`;
+      }
+    }
+
+    // Comando de ping
+    if (command === "ping") {
+      // Verifica se o timestamp da mensagem existe e está em segundos ou milissegundos
+      const timestamp = msg.messageTimestamp
+        ? typeof msg.messageTimestamp === "number"
+          ? msg.messageTimestamp * 1000
+          : Date.now()
+        : Date.now();
+
+      const ms = Date.now() / timestamp; // Calcula a latência (tempo de resposta)
+
+      // Verifica se o cálculo da latência resultou em NaN, atribuindo 0ms como fallback
+      const validLatency = isNaN(ms) ? 0 : ms;
+
+      // Arredonda a latência para um número inteiro
+      const roundedLatency = validLatency.toFixed(0);
+
+      // Gera a resposta com base na latência válida
+      const responseMsg = `*Pong!* 🏓\n\n${getPingResponse(
+        roundedLatency
+      )}\n\nミ★ *MagoBot JS 1.2* ★彡`;
+
+      // Envia a mensagem com o tempo de resposta
+      await sock.sendMessage(msg.key.remoteJid, { text: responseMsg });
+
+      // Reage à mensagem
       await sock.sendMessage(msg.key.remoteJid, {
         react: { text: "🏓", key: msg.key },
       });
+
       return;
+    }
+
+    // Função para carregar a lista de comandos do arquivo JSON
+    function loadCommands() {
+      const data = fs.readFileSync("comandos.json", "utf-8");
+      return JSON.parse(data);
+    }
+
+    // Função para verificar se o comando existe no JSON
+    function commandExists(command, commandsList) {
+      return commandsList.hasOwnProperty(command);
+    }
+
+    // Carrega a lista de comandos ao iniciar
+    const commandsList = loadCommands();
+
+    // Supondo que 'command' seja o comando que o usuário enviou
+    if (command) {
+      if (commandExists(command, commandsList)) {
+        // O comando existe no .json, aqui executa o que precisa
+        console.log(`Comando ${command} encontrado no .json.`);
+      } else {
+        // O comando não existe, reage com ponto de interrogação
+        const responseMsg = `O comando *${command}* não existe. Use *!menu* para ver os comandos disponíveis.`;
+
+        await sock.sendMessage(msg.key.remoteJid, { text: responseMsg });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "❓", key: msg.key },
+        });
+      }
     }
 
     // Comando de cálculo usando mathjs
@@ -196,7 +264,7 @@ async function startBot() {
     // Comando de info
     if (command === "info") {
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `Informações sobre o bot 🤖:\n\n- *Bot: MagoBot*\n- *Versão: 1.1*\n- *Criador: Pedro Henrique 🧑‍💻*\n\n${getMessageEnd()}`,
+        text: `Informações sobre o bot 🤖:\n\n- *Bot: MagoBot*\n- *Versão: 1.2*\n- *Criador: Pedro Henrique 🧑‍💻*\n\n${getMessageEnd()}`,
       });
       await sock.sendMessage(msg.key.remoteJid, {
         react: { text: "ℹ️", key: msg.key },
@@ -461,6 +529,16 @@ async function startBot() {
       return;
     }
 
+    if (command === "regras") {
+      const groupMetadata = await sock.groupMetadata(msg.key.remoteJid);
+      const groupDescription =
+        groupMetadata.desc || "Nenhuma descrição disponível.";
+
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `📜 *Regras do Grupo:*\n\n${groupDescription}\n\n${getMessageEnd()}`,
+      });
+    }
+
     // Comando de uptime
     if (command === "uptime") {
       const uptime = formatUptime(Date.now() - botStartTime);
@@ -504,6 +582,7 @@ async function startBot() {
       }
     }
   });
+
   console.log("BOT LIGADO!");
 }
 
@@ -537,7 +616,7 @@ async function getSimSimiResponse(message) {
 }
 
 function getMessageEnd() {
-  return "ミ★ *MagoBot JS 1.1* ★彡";
+  return "ミ★ *MagoBot JS 1.2* ★彡";
 }
 
 startBot();
