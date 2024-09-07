@@ -264,7 +264,7 @@ async function startBot() {
     // Comando de info
     if (command === "info") {
       await sock.sendMessage(msg.key.remoteJid, {
-        text: `Informações sobre o bot 🤖:\n\n- *Bot: MagoBot*\n- *Versão: 1.2*\n- *Criador: Pedro Henrique 🧑‍💻*\n\n${getMessageEnd()}`,
+        text: `Informações sobre o bot 🤖:\n\n- *Bot: MagoBot*\n- *Versão: 1.3*\n- *Criador: Pedro Henrique 🧑‍💻*\n\n${getMessageEnd()}`,
       });
       await sock.sendMessage(msg.key.remoteJid, {
         react: { text: "ℹ️", key: msg.key },
