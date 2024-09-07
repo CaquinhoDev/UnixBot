@@ -616,7 +616,7 @@ async function getSimSimiResponse(message) {
 }
 
 function getMessageEnd() {
-  return "ミ★ *MagoBot JS 1.2* ★彡";
+  return "ミ★ *MagoBot JS 1.3* ★彡";
 }
 
 startBot();
