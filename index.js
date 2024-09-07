@@ -103,7 +103,7 @@ async function startBot() {
       // Gera a resposta com base na latência válida
       const responseMsg = `*Pong!* 🏓\n\n${getPingResponse(
         roundedLatency
-      )}\n\nミ★ *MagoBot JS 1.2* ★彡`;
+      )}\n\n${getMessageEnd()}`;
 
       // Envia a mensagem com o tempo de resposta
       await sock.sendMessage(msg.key.remoteJid, { text: responseMsg });
