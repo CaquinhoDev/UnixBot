@@ -12,6 +12,7 @@ const math = require("mathjs"); // Importando a biblioteca mathjs
 const translate = require("@vitalets/google-translate-api");
 const fs = require("fs");
 const PREFIX = "!";
+const pino = require("pino");
 const SIMI_API_URL = "https://api.simsimi.vn/v1/simtalk"; // URL da API SimSimi
 
 // Obtendo o número de telefone do dono do arquivo .env
@@ -24,7 +25,7 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     printQRInTerminal: true,
-    //logger: console,
+    logger: pino({ level: "silent" }),
   });
 
   sock.ev.on("creds.update", saveCreds);
@@ -114,36 +115,6 @@ async function startBot() {
       });
 
       return;
-    }
-
-    // Função para carregar a lista de comandos do arquivo JSON
-    function loadCommands() {
-      const data = fs.readFileSync("comandos.json", "utf-8");
-      return JSON.parse(data);
-    }
-
-    // Função para verificar se o comando existe no JSON
-    function commandExists(command, commandsList) {
-      return commandsList.hasOwnProperty(command);
-    }
-
-    // Carrega a lista de comandos ao iniciar
-    const commandsList = loadCommands();
-
-    // Supondo que 'command' seja o comando que o usuário enviou
-    if (command) {
-      if (commandExists(command, commandsList)) {
-        // O comando existe no .json, aqui executa o que precisa
-        console.log(`Comando ${command} encontrado no .json.`);
-      } else {
-        // O comando não existe, reage com ponto de interrogação
-        const responseMsg = `O comando *${command}* não existe. Use *!menu* para ver os comandos disponíveis.`;
-
-        await sock.sendMessage(msg.key.remoteJid, { text: responseMsg });
-        await sock.sendMessage(msg.key.remoteJid, {
-          react: { text: "❓", key: msg.key },
-        });
-      }
     }
 
     // Comando de cálculo usando mathjs
@@ -239,6 +210,7 @@ async function startBot() {
     | ೈ፝͜͡🤑 !dado
     | ೈ፝͜͡🤑 !moeda
     | ೈ፝͜͡🤑 !adivinha
+    | ೈ፝͜͡🤑 !pesquisar
     ╰════════════════════╮
       `;
       await sock.sendMessage(msg.key.remoteJid, {
@@ -258,6 +230,68 @@ async function startBot() {
       await sock.sendMessage(msg.key.remoteJid, {
         react: { text: "👑", key: msg.key },
       });
+      return;
+    }
+    // Comando de pesquisar
+    if (command === "pesquisar") {
+      console.log("Comando 'pesquisar' recebido.");
+
+      // Verifique se `body` está definido e se a mensagem contém o corpo esperado
+      if (typeof body !== "string") {
+        console.error(
+          "O corpo da mensagem não está definido ou não é uma string."
+        );
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: "Houve um problema ao processar sua solicitação.",
+        });
+        return;
+      }
+
+      // Remove o alias (ex: "!pesquisar") da mensagem e pega o termo de pesquisa
+      let searchTerm = body.replace(alias, "").trim();
+      console.log("Termo de pesquisa:", searchTerm);
+
+      if (!searchTerm) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: "Você precisa fornecer um termo para pesquisar!",
+        });
+        return;
+      }
+
+      // Remove caracteres especiais que podem causar erro
+      searchTerm = searchTerm.replace(/[!@#$%^&*(),.?":{}|<>]/g, "");
+      console.log("Termo de pesquisa limpo:", searchTerm);
+
+      try {
+        // Faz a requisição para a API da Wikipedia
+        const { data } = await axios.get(
+          `https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+            searchTerm
+          )}`
+        );
+        console.log("Resposta da API:", data);
+
+        if (data.extract) {
+          // Monta a resposta com o resumo e o link da Wikipedia
+          const summary = `*${data.title}*\n\n${data.extract}\n\nLeia mais: ${data.content_urls.desktop.page}`;
+          await sock.sendMessage(msg.key.remoteJid, { text: summary });
+        } else {
+          await sock.sendMessage(msg.key.remoteJid, {
+            text: "Nenhum resultado encontrado para o termo pesquisado.",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar na Wikipedia:", error);
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: "Ocorreu um erro ao realizar a pesquisa. Tente novamente mais tarde.",
+        });
+      }
+
+      // Reage à mensagem com o emoji de pesquisa
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "🔍", key: msg.key },
+      });
+
       return;
     }
 
