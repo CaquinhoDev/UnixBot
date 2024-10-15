@@ -574,6 +574,8 @@ async function startBot() {
     }
 
     function getSaudacao(nome) {
+      // Se o nome não funcionar ele vai falar humano
+      nome = nome || "humano";
       const horaAtual = new Date().getHours();
       if (horaAtual >= 5 && horaAtual < 12) {
         return `Bom dia, ${nome}`;
@@ -589,7 +591,7 @@ async function startBot() {
     // Comando de uptime
     if (command === "uptime") {
       const uptime = formatUptime(Date.now() - botStartTime);
-      const saudacao = getSaudacao();
+      const saudacao = getSaudacao(msg.pushName);
       await sock.sendMessage(msg.key.remoteJid, {
         text: `🕐 ${saudacao}, o bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
       });
