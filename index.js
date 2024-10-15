@@ -28,20 +28,6 @@ async function startBot() {
     logger: pino({ level: "silent" }),
   });
 
-  function getSaudacao(nome) {
-      const horaAtual = new Date().getHours();
-        if (horaAtual >= 5 && horaAtual < 12) {
-            return `Bom dia, ${nome}`;
-              } else if (horaAtual >= 12 && horaAtual < 18) {
-                  return `Boa tarde, ${nome}`;
-                    } else if (horaAtual >= 18 && horaAtual < 24) {
-                        return `Boa noite, ${nome}`;
-                          } else {
-                              return `Boa madrugada, ${nome}`;
-                                }
-                                }
-}
-
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("connection.update", (update) => {
@@ -587,25 +573,29 @@ async function startBot() {
       });
     }
 
-    // Comando de uptime
+    function getSaudacao() {
+      const horaAtual = new Date().getHours();
+      if (horaAtual >= 5 && horaAtual < 12) {
+        return "Bom dia";
+      } else if (horaAtual >= 12 && horaAtual < 18) {
+        return "Boa tarde";
+      } else if (horaAtual >= 18 && horaAtual < 24) {
+        return "Boa noite";
+      } else {
+        return "Boa madrugada";
+      }
+    }
+
     // Comando de uptime
     if (command === "uptime") {
       const uptime = formatUptime(Date.now() - botStartTime);
-        const saudacao = getSaudacao(msg.pushName); // Passa o nome do usuário para a saudação
-          await sock.sendMessage(msg.key.remoteJid, {
-              text: `🕐 ${saudacao}, o bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
-                });
-                  await sock.sendMessage(msg.key.remoteJid, {
-                      react: { text: "🕐", key: msg.key },
-                        });
-                        }
-   
-      
-       
-      
-      
-       
-
+      const saudacao = getSaudacao();
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `🕐 ${saudacao}, o bot está online há *${uptime}*.\n\n${getMessageEnd()}`,
+      });
+      await sock.sendMessage(msg.key.remoteJid, {
+        react: { text: "🕐", key: msg.key },
+      });
 
       // Comando de fechar grupo
       if (command === "fechar") {
