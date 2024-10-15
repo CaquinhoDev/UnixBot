@@ -573,16 +573,16 @@ async function startBot() {
       });
     }
 
-    function getSaudacao() {
+    function getSaudacao(nome) {
       const horaAtual = new Date().getHours();
       if (horaAtual >= 5 && horaAtual < 12) {
-        return "Bom dia";
+        return `Bom dia, ${nome}`;
       } else if (horaAtual >= 12 && horaAtual < 18) {
-        return "Boa tarde";
+        return `Boa tarde, ${nome}`;
       } else if (horaAtual >= 18 && horaAtual < 24) {
-        return "Boa noite";
+        return `Boa noite, ${nome}`;
       } else {
-        return "Boa madrugada";
+        return `Boa madrugada, ${nome}`;
       }
     }
 
