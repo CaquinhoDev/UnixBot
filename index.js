@@ -83,7 +83,7 @@ async function startBot() {
       const end = Date.now();
       const ping = end - start;
 
-      await sock.sendMessage(from, {
+      await sock.sendMessage(msg.key.remoteJid, {
         text: `📶 Tempo de resposta: ${ping}ms\n\n` + getMessageEnd(),
       });
       await sock.sendMessage(msg.key.remoteJid, {
