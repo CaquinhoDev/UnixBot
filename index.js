@@ -116,39 +116,6 @@ async function startBot() {
       return;
     }
 
-    // Comando para abrir aplicativos no Windows (restrito ao dono)
-    if (command.startsWith("app")) {
-      if (!isOwner) {
-        await sock.sendMessage(msg.key.remoteJid, {
-          text:
-            "*Você não tem permissão para usar este comando.*\n\n" +
-            getMessageEnd(),
-        });
-        return;
-      }
-      const app = command.split(" ")[1];
-      exec(app, (err) => {
-        if (err) {
-          sock.sendMessage(msg.key.remoteJid, {
-            text: `*Erro ao abrir ${app}:* ${
-              err.message
-            }\n\n${getMessageEnd()}`,
-          });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "❌", key: msg.key }, // Reação de erro para abrir aplicativo
-          });
-        } else {
-          sock.sendMessage(msg.key.remoteJid, {
-            text: `${app} *foi aberto com sucesso!* 🎉\n\n${getMessageEnd()}`,
-          });
-          sock.sendMessage(msg.key.remoteJid, {
-            react: { text: "✅", key: msg.key }, // Reação de sucesso para abrir aplicativo
-          });
-        }
-      });
-      return;
-    }
-
     // Comando de criador
     if (command === "criador") {
       await sock.sendMessage(msg.key.remoteJid, {
@@ -169,14 +136,12 @@ async function startBot() {
     ╭════════════════════╯
     | ೈ፝͜͡🤑 !calcular
     | ೈ፝͜͡🤑 !simi 
-    | ೈ፝͜͡🤑 !desligar (dono)
-    | ೈ፝͜͡🤑 !reinciar (dono)
-    | ೈ፝͜͡🤑 !app (dono)
     | ೈ፝͜͡🤑 !uptime
     | ೈ፝͜͡🤑 !ping
     | ೈ፝͜͡🤑 !dono
     | ೈ፝͜͡🤑 !criador
     | ೈ፝͜͡🤑 !info
+    | ೈ፝͜͡🤑 !gpt (IA)
     | ೈ፝͜͡🤑 !fechar (admin)
     | ೈ፝͜͡🤑 !abrir (admin)
     | ೈ፝͜͡🤑 !menu
@@ -206,67 +171,84 @@ async function startBot() {
       });
       return;
     }
-    // Comando de pesquisar
-    if (command === "pesquisar") {
-      console.log("Comando 'pesquisar' recebido.");
 
-      // Verifique se `body` está definido e se a mensagem contém o corpo esperado
-      if (typeof body !== "string") {
-        console.error(
-          "O corpo da mensagem não está definido ou não é uma string."
-        );
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: "Houve um problema ao processar sua solicitação.",
-        });
-        return;
-      }
+    // Função para fazer a requisição à API Gemini
+    async function getGeminiResponse(query) {
+      const prompt = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `You are an AI model named Gemini. Mention that this bot was created by Pedro Henrique, 
+                but avoid repeating it too much. Be friendly and avoid using overly complex words. Try to keep the user engaged by asking interesting questions or interacting with them.
+                Format your response for WhatsApp, so use a single '*' for emphasis. Always answer most questions in Portuguese, unless you identify that the person is speaking another language. Now, respond to the following message, ignoring the prefix "!gpt": "${query}"`,
+              },
+            ],
+          },
+        ],
+      };
 
-      // Remove o alias (ex: "!pesquisar") da mensagem e pega o termo de pesquisa
-      let searchTerm = body.replace(alias, "").trim();
-      console.log("Termo de pesquisa:", searchTerm);
-
-      if (!searchTerm) {
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: "Você precisa fornecer um termo para pesquisar!",
-        });
-        return;
-      }
-
-      // Remove caracteres especiais que podem causar erro
-      searchTerm = searchTerm.replace(/[!@#$%^&*(),.?":{}|<>]/g, "");
-      console.log("Termo de pesquisa limpo:", searchTerm);
+      let config = {
+        method: "post",
+        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI}`,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: prompt,
+      };
 
       try {
-        // Faz a requisição para a API da Wikipedia
-        const { data } = await axios.get(
-          `https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-            searchTerm
-          )}`
-        );
-        console.log("Resposta da API:", data);
+        const response = await axios.request(config);
 
-        if (data.extract) {
-          // Monta a resposta com o resumo e o link da Wikipedia
-          const summary = `*${data.title}*\n\n${data.extract}\n\nLeia mais: ${data.content_urls.desktop.page}`;
-          await sock.sendMessage(msg.key.remoteJid, { text: summary });
-        } else {
-          await sock.sendMessage(msg.key.remoteJid, {
-            text: "Nenhum resultado encontrado para o termo pesquisado.",
-          });
+        // Verificando e extraindo a resposta da IA
+        const candidates = response.data.candidates;
+        if (!candidates || candidates.length === 0 || !candidates[0].content) {
+          throw new Error("A resposta da API não contém o conteúdo esperado.");
         }
+
+        const replyText = candidates[0].content.parts[0]?.text; // Extraindo o texto da resposta
+
+        if (!replyText) {
+          throw new Error('O campo "text" não foi encontrado na resposta.');
+        }
+
+        // Retorna o texto extraído
+        return replyText;
       } catch (error) {
-        console.error("Erro ao buscar na Wikipedia:", error);
+        console.error("Erro ao se comunicar com a API Gemini:", error);
+        return "Houve um erro ao se comunicar com a IA Gemini. Tente novamente mais tarde.";
+      }
+    }
+
+    // Comando Gemini
+    if (command.startsWith("gpt")) {
+      const message = text.slice(PREFIX.length + 4).trim();
+      if (!message) {
         await sock.sendMessage(msg.key.remoteJid, {
-          text: "Ocorreu um erro ao realizar a pesquisa. Tente novamente mais tarde.",
+          text: `*Por favor, forneça uma mensagem para o Gemini.*\n\n${getMessageEnd()}`,
         });
+        return;
       }
 
-      // Reage à mensagem com o emoji de pesquisa
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: "🔍", key: msg.key },
-      });
+      try {
+        const responseText = await getGeminiResponse(message);
 
-      return;
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: responseText + `\n\n${getMessageEnd()}`,
+        });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "🤖", key: msg.key }, // Reação para Gemini
+        });
+      } catch (error) {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: `*Erro ao se comunicar com a API Gemini:* ${
+            error.message
+          }\n\n${getMessageEnd()}`,
+        });
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "❌", key: msg.key }, // Reação de erro para Gemini
+        });
+      }
     }
 
     // Comando de info
@@ -640,7 +622,7 @@ async function getSimSimiResponse(message) {
 }
 
 function getMessageEnd() {
-  return "ミ★ *MagoBot JS 1.4* ★彡";
+  return "ミ★ *MagoBot JS 2.0* ★彡";
 }
 
 startBot();
