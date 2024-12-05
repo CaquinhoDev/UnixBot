@@ -2,8 +2,8 @@
   "name": "mago",
   "version": "2.0",
   "description": "A WhatsApp Bot",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/bot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,7 +18,6 @@
     "form-data": "^4.0.0",
     "math.js": "^1.1.46",
     "mathjs": "^13.0.3",
-    "mime": "^2.6.0",
     "pino": "^9.4.0",
     "qr-image": "^3.2.0",
     "qrcode": "^1.5.4",
