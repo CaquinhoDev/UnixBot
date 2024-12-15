@@ -30,6 +30,13 @@ Um bot para Whatsapp usando Baileys!
 - **Calcular**: ✅ Feito
 - **Criador**: ✅ Feito
 - **Dado**: ✅ Feito
+- **Adivinha**: ✅ Feito
+- **Traduzir**: ✅ Feito
+- **Sorteio**: ✅ Feito
+- **Piada**: ✅ Feito
+- **DDD**: ✅ Feito
+- **Todos**: ✅ Feito
+- **Pesquisar**: ✅ Feito
 - **Fechar**: ✅ Feito
 - **Dono**: ✅ Feito
 - **Gemini**: ✅ Feito
@@ -40,4 +47,6 @@ Um bot para Whatsapp usando Baileys!
 - **Ping**: ✅ Feito
 - **Simi**: ✅ Feito
 - **Uptime**: ✅ Feito
+- **Convite**: ✅ Feito
+- **Pix**: ✅ Feito
 - **Voz**: 🔄 Testes
