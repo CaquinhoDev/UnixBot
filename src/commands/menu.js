@@ -14,6 +14,11 @@ module.exports = async function handleMenu(msg, sock) {
 | 🤑 !abrir (admin)
 | 🤑 !menu
 | 🤑 !imagem
+| 🤑 !ddd
+| 🤑 !sorteio
+| 🤑 !piada
+| 🤑 !todos
+| 🤑 !traduzir
 | 🤑 !dado
 | 🤑 !moeda
 | 🤑 !adivinha
@@ -26,5 +31,7 @@ module.exports = async function handleMenu(msg, sock) {
 
 async function sendMessageWithReaction(msg, sock, text, emoji) {
   await sock.sendMessage(msg.key.remoteJid, { text: `${text}\n\n` });
-  await sock.sendMessage(msg.key.remoteJid, { react: { text: emoji, key: msg.key } });
+  await sock.sendMessage(msg.key.remoteJid, {
+    react: { text: emoji, key: msg.key },
+  });
 }

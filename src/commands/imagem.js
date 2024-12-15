@@ -28,7 +28,6 @@ module.exports = async function handleImagem(msg, sock, args) {
     // Caminho do arquivo temporário
     const tempFilePath = path.join(tempDir, `temp_image_${Date.now()}.jpg`);
 
-    // Escrever o arquivo temporário
     fs.writeFileSync(tempFilePath, imageBuffer);
 
     // Enviar a imagem para o WhatsApp
@@ -41,14 +40,14 @@ module.exports = async function handleImagem(msg, sock, args) {
     fs.unlinkSync(tempFilePath);
 
     await sock.sendMessage(msg.key.remoteJid, {
-      react: { text: "🖼️", key: msg.key }, // Reação para imagem
+      react: { text: "🖼️", key: msg.key },
     });
   } catch (error) {
     await sock.sendMessage(msg.key.remoteJid, {
       text: `*Erro ao buscar a imagem:* ${error.message}\n\n`,
     });
     await sock.sendMessage(msg.key.remoteJid, {
-      react: { text: "❌", key: msg.key }, // Reação de erro para imagem
+      react: { text: "❌", key: msg.key },
     });
   }
 };

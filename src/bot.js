@@ -9,7 +9,9 @@ const path = require("path");
 const qrcode = require("qrcode");
 const { PREFIX, OWNER_PHONE_NUMBER } = require("./config");
 //const { comandoAdivinha, tentarAdivinhar } = require("./commands/advinha");
-
+const comandoInfo = require("./commands/info");
+const comandoVoz = require("./commands/voz"); // Comando de voz
+const { downloadYouTubeVideo } = require("./commands/play");
 // Estado do bot
 let botStartTime = Date.now();
 let aguardandoAudio = new Set();
@@ -105,6 +107,31 @@ async function handleMessage({ messages }, sock) {
     const isOwner = msg.key.remoteJid === OWNER_PHONE_NUMBER;
 
     console.log("Comando identificado:", command);
+
+    // Verificar comandos de áudio (por exemplo, o comando !audio)
+    if (command === "audio") {
+      return await handleAudio(msg, sock);
+    }
+
+    if (command === "play") {
+      await downloadYouTubeVideo(msg, sock, args);
+      return;
+    }
+
+    // Comandos disponíveis
+    const commandHandlers = getCommandHandlers();
+    if (commandHandlers[command]) {
+      console.log("Comando encontrado no manipulador:", command);
+      await commandHandlers[command](msg, sock, args, isOwner); // Passa isOwner para a função
+    } else {
+      console.log(`Comando não encontrado: ${command}`); // Correção aqui: use crases para interpolação
+      await sendMessageWithReaction(
+        msg,
+        sock,
+        "*Comando não encontrado. Tente novamente.*",
+        "❌"
+      );
+    }
   }
 }
 
@@ -121,12 +148,67 @@ function getCommandHandlers() {
     imagem: require("./commands/imagem"),
     adivinha: require("./commands/advinha"),
     moeda: require("./commands/moeda"),
+    traduzir: require("./commands/traduzir"),
+    piada: require("./commands/piada"),
+    ddd: require("./commands/ddd"),
+    pesquisar: require("./commands/pesquisar"),
     dado: require("./commands/dado"),
+    //youtube: require("./commands/play"),
+    //ban: require("./commands/ban"),
+    regras: require("./commands/regras"),
+    gtts: require("./commands/gtts"),
+    //enviarAudio: require("./commands/audio"),
     uptime: require("./commands/uptime"),
+    sorteio: require("./commands/sorteio"),
+    todos: require("./commands/todos"),
     fechar: require("./commands/fechar"),
     abrir: require("./commands/abrir"),
     info: comandoInfo,
   };
+}
+
+// Função para lidar com comandos de áudio
+async function handleAudio(msg, sock) {
+  console.log("Aguardando áudio do usuário...");
+
+  if (aguardandoAudio.has(msg.key.remoteJid)) {
+    await sendMessageWithReaction(
+      msg,
+      sock,
+      "Já estou aguardando um áudio para este chat.",
+      "❌"
+    );
+  } else {
+    aguardandoAudio.add(msg.key.remoteJid);
+    await sendMessageWithReaction(
+      msg,
+      sock,
+      "Agora aguardo seu áudio. Por favor, envie-o.",
+      "✅"
+    );
+  }
+}
+
+// Função para lidar com mensagens de voz
+async function handleVoiceMessage(msg, sock) {
+  console.log("Entrou na função handleVoiceMessage!");
+
+  if (aguardandoAudio.has(msg.key.remoteJid)) {
+    console.log("Áudio recebido! Processando...");
+    const audioUrl = msg.message.audioMessage.url;
+    console.log("URL do áudio:", audioUrl);
+
+    await comandoVoz(msg, sock, audioUrl); // Aqui chama o comando do arquivo voz.js
+    aguardandoAudio.delete(msg.key.remoteJid);
+  } else {
+    console.log("Áudio recebido, mas não estava aguardando áudio.");
+    await sendMessageWithReaction(
+      msg,
+      sock,
+      "Envie o comando !áudio primeiro para começar a captura.",
+      "❌"
+    );
+  }
 }
 
 // Função para enviar mensagens com reações

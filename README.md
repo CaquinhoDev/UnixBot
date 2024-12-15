@@ -18,7 +18,7 @@ Um bot para Whatsapp usando Baileys!
    ```
 4. Inciar:
    ```bash
-   npm start
+   node index.js
    ```
 
 # TODO.md

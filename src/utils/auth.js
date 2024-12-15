@@ -10,18 +10,18 @@ function formatUptime(ms) {
   return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
-function getSaudacao() {
+function getSaudacao(nome) {
   let hour = new Date().getHours();
   hour -= 3;
   if (hour < 0) {
-    hour += 24; 
+    hour += 24;
   }
 
   console.log("Hora corrigida do sistema:", hour);
 
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
+  if (hour < 12) return `Bom dia, ${nome}`;
+  if (hour < 18) return `Boa tarde, ${nome}`;
+  return `Boa noite, ${nome}`;
 }
 
 module.exports = { formatUptime, getSaudacao };

@@ -28,7 +28,6 @@ async function sendErrorMessage(sock, msg, message) {
   });
 }
 
-// Função para obter o final da mensagem
 function getMessageEnd() {
   return "Se precisar de ajuda, fale com o administrador!";
 }
