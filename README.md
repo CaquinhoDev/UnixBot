@@ -36,6 +36,7 @@ Um bot para Whatsapp usando Baileys!
 - **Piada**: ✅ Feito
 - **DDD**: ✅ Feito
 - **Todos**: ✅ Feito
+- **Gtts**: ✅ Feito
 - **Pesquisar**: ✅ Feito
 - **Fechar**: ✅ Feito
 - **Dono**: ✅ Feito
