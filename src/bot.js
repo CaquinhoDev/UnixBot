@@ -158,6 +158,8 @@ function getCommandHandlers() {
     regras: require("./commands/regras"),
     gtts: require("./commands/gtts"),
     //enviarAudio: require("./commands/audio"),
+    convite: require("./commands/convite"),
+    pix: require("./commands/pix"),
     uptime: require("./commands/uptime"),
     sorteio: require("./commands/sorteio"),
     todos: require("./commands/todos"),
