@@ -38,6 +38,23 @@ async function startBot() {
     "messages.upsert",
     async (message) => await handleMessage(message, sock)
   );
+
+  sock.ev.on("call", async (callUpdate) => {
+    for (const call of callUpdate) {
+      if (call.status === "ringing") {
+        console.log(`Recebendo chamada de ${call.from}`);
+
+        // Recusa a chamada automaticamente
+        await sock.rejectCall(call.id, call.from);
+        console.log(`Chamada de ${call.from} foi recusada.`);
+
+        // Opcional: envia uma mensagem para avisar o usuário
+        await sock.sendMessage(call.from, {
+          text: "Desculpe, eu não aceito chamadas. Por favor, envie uma mensagem.",
+        });
+      }
+    }
+  });
 }
 
 // Função para tratar eventos de conexão
@@ -121,7 +138,7 @@ async function handleMessage({ messages }, sock) {
     // Comandos disponíveis
     const commandHandlers = getCommandHandlers();
     if (commandHandlers[command]) {
-      console.log("Comando encontrado no manipulador:", command);
+      console.log(`Comando encontrado no manipulador: ${command}`); // Correção aqui: use crases para interpolação
       await commandHandlers[command](msg, sock, args, isOwner); // Passa isOwner para a função
     } else {
       console.log(`Comando não encontrado: ${command}`); // Correção aqui: use crases para interpolação
