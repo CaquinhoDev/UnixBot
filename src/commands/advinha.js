@@ -5,7 +5,7 @@ let isGameActive = false;
 let guessedNumber = null;
 let currentGameUser = null;
 
-module.exports = async function handleAdivinha(msg, sock) {
+module.exports = async function handleAdivinha(msg, sock, args) {
   const command = args.join(" ")[0]; // O comando digitado pelo usuário
   const userGuess = parseInt(args.join(" ")[1]); // O número que o usuário enviou
 

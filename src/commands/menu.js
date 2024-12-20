@@ -17,6 +17,11 @@ module.exports = async function handleMenu(msg, sock) {
 | 🤑 !ddd
 | 🤑 !sorteio
 | 🤑 !piada
+| 🤑 !convite
+| 🤑 !pix
+| 🤑 !checkurl
+| 🤑 !encurtaurl
+| 🤑 !noticias
 | 🤑 !todos
 | 🤑 !traduzir
 | 🤑 !dado
