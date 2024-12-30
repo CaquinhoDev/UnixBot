@@ -1,5 +1,5 @@
 module.exports = async function handleMenu(msg, sock) {
-  const menu = `༒W̷E̷L̷C̷O̷M̷E̷༒
+  const menu = `
   『 𝐌𝐄𝐍𝐔 』
 ╭════════════════════╮
 | 🤑 !calcular
@@ -29,6 +29,8 @@ module.exports = async function handleMenu(msg, sock) {
 | 🤑 !adivinha
 | 🤑 !pesquisar
 | 🤑 !audio
+| ⚠️ Para fazer figurinhas
+| ⚠️ Basta enviar uma foto!
 ╰════════════════════╯`;
 
   await sendMessageWithReaction(msg, sock, menu, "📜");

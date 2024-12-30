@@ -20,13 +20,6 @@ let aguardandoAudio = new Set();
 let stickerMode = false;
 //let simiAtivo = false;
 
-const tempWhitelist = [
-  "120363304668254868",
-  "557799161516",
-  "5511913372146",
-  "5511944834380",
-];
-
 async function startBot() {
   console.log("Iniciando o bot...");
 
@@ -107,12 +100,6 @@ async function handleMessage({ messages }, sock) {
 
   if (!msg.message || msg.key.fromMe) return;
 
-  const senderNumber = msg.key.remoteJid.split("@")[0];
-  if (!tempWhitelist.includes(senderNumber)) {
-    console.log(`Mensagem de ${senderNumber} ignorada: não está na whitelist.`);
-    return;
-  }
-
   if (msg.message.audioMessage) {
     console.log("Mensagem de áudio detectada!");
     return await handleVoiceMessage(msg, sock);
@@ -122,51 +109,71 @@ async function handleMessage({ messages }, sock) {
     msg.message.conversation || msg.message.extendedTextMessage?.text;
 
   if (text && text.startsWith(PREFIX)) {
-    const commandText = text.slice(PREFIX.length).trim();
+    const commandText = text.slice(PREFIX.length).trim().toLowerCase();
     const [command, ...args] = commandText.split(" ");
     const isOwner = msg.key.remoteJid === OWNER_PHONE_NUMBER;
 
     console.log("Comando identificado:", command);
 
-    // Função para enviar mensagem com reação
-    async function sendMessageWithReaction(msg, sock, text, emoji) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `${text}\n\n` });
-      await sock.sendMessage(msg.key.remoteJid, {
-        react: { text: emoji, key: msg.key },
-      });
-    }
-
-    if (command === "sticker") {
-      stickerMode = true;
+    // Comando !áudio para começar a esperar um áudio
+    if (command === "áudio" || command === "audio") {
+      aguardandoAudio.add(msg.key.remoteJid);
       await sendMessageWithReaction(
         msg,
         sock,
-        "*Modo de figurinha ativado. Envie uma mídia para criar uma figurinha.*",
+        "Estou aguardando seu áudio...",
         "✅"
       );
       return;
     }
 
     if (command === "checkurl") {
+      console.log("Comando !checkurl detectado");
       await checkUrlCommand(msg, sock, args);
       return;
     }
 
-    if (command === "play") {
+    if (command === "youtube") {
       await downloadYouTubeVideo(msg, sock, args);
+      return;
+    }
+
+    if (command === "encurtaurl") {
+      console.log("Comando !encurtaurl detectado");
+      const url = args.join(" ").trim();
+      console.log("URL a ser encurtada:", url);
+      const urlEncurtada = await require("./commands/encurtaurl")(
+        msg,
+        sock,
+        url
+      );
       return;
     }
 
     const commandHandlers = getCommandHandlers();
     if (commandHandlers[command]) {
+      console.log("Comando encontrado no manipulador:", command);
       await commandHandlers[command](msg, sock, args, isOwner);
     } else {
+      console.log(`Comando não encontrado: ${command}`);
       await sendMessageWithReaction(
         msg,
         sock,
         "*Comando não encontrado. Tente novamente.*",
         "❌"
       );
+    }
+  }
+
+  // Verifica se a mensagem contém uma imagem e chama o comando de figurinha
+  if (msg.message.imageMessage) {
+    try {
+      await createStickerCommand(msg, sock); // Criação da figurinha a partir da imagem
+    } catch (error) {
+      console.error("Erro ao criar figurinha:", error);
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "Erro ao criar figurinha. Tente novamente.",
+      });
     }
   }
 }
