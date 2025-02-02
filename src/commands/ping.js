@@ -1,7 +1,7 @@
 module.exports = async function handlePing(msg, sock) {
   const start = Date.now();
   await sock.sendMessage(msg.key.remoteJid, {
-    text: "🏓 Pong! Calculando o tempo de resposta...\n\n",
+    text: "🏓 Pong! Calculando o tempo de resposta...",
   });
 
   const end = Date.now();
@@ -11,6 +11,8 @@ module.exports = async function handlePing(msg, sock) {
 };
 
 async function sendMessageWithReaction(msg, sock, text, emoji) {
-  await sock.sendMessage(msg.key.remoteJid, { text: `${text}\n\n` });
-  await sock.sendMessage(msg.key.remoteJid, { react: { text: emoji, key: msg.key } });
+  await sock.sendMessage(msg.key.remoteJid, { text: `${text}` });
+  await sock.sendMessage(msg.key.remoteJid, {
+    react: { text: emoji, key: msg.key },
+  });
 }
