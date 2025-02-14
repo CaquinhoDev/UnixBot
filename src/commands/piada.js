@@ -2,6 +2,7 @@ const axios = require("axios");
 
 module.exports = async function handleJoke(msg, sock) {
   try {
+    // Configura a URL da API para incluir todas as categorias
     const { data } = await axios.get("https://v2.jokeapi.dev/joke/Any?lang=pt");
 
     let jokeText;

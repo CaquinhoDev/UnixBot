@@ -1,72 +1,63 @@
-const {
-  areJidsSameUser,
-  jidNormalizedUser,
-} = require("@whiskeysockets/baileys");
+module.exports = async function handleBan(msg, sock, args) {
+  try {
+    // Verifica se a mensagem foi enviada em um grupo
+    if (!msg.key.remoteJid.endsWith("@g.us")) {
+      return await sock.sendMessage(msg.key.remoteJid, {
+        text: "❌ Este comando só pode ser usado em grupos!",
+      });
+    }
 
-module.exports = async function handleBan(msg, sock, args, group) {
-  const kickedUsers = msg.message.extendedTextMessage
-    ? msg.message.extendedTextMessage.contextInfo.mentionedJid || []
-    : args.filter((jid) => /^\d{10,13}@s\.whatsapp\.net$/.test(jid));
+    // Verifica se o usuário forneceu um número para banir
+    if (!args[0]) {
+      return await sock.sendMessage(msg.key.remoteJid, {
+        text: "⚠️ Uso incorreto! Digite: *!ban @usuario*",
+      });
+    }
 
-  if (!kickedUsers || kickedUsers.length < 1) {
-    return await sock.sendMessage(msg.key.remoteJid, {
-      text: "⚠ O número a ser removido não foi encontrado. Mencione alguém ou cite uma mensagem!",
-    });
-  }
+    // Obtém o ID do usuário mencionado (formato: @551234567890)
+    let mentionedUser = args[0].replace(/[@\s]/g, "") + "@s.whatsapp.net";
 
-  if (!group)
-    return await sock.sendMessage(msg.key.remoteJid, {
-      react: { text: "❌", key: msg.key },
-    });
+    // Obtém a lista de participantes do grupo
+    const groupMetadata = await sock.groupMetadata(msg.key.remoteJid);
+    const participants = groupMetadata.participants;
 
-  const clientJid = jidNormalizedUser(sock.user?.id);
-  for (const user of kickedUsers) {
-    // Verifica se o usuário está no grupo
-    const isMember = group.participants.some((p) =>
-      areJidsSameUser(p.id, user)
+    // Verifica se o bot é administrador
+    const botNumber = sock.user.id.split(":")[0] + "@s.whatsapp.net";
+    const botIsAdmin = participants.some((p) => p.id === botNumber && p.admin);
+
+    if (!botIsAdmin) {
+      return await sock.sendMessage(msg.key.remoteJid, {
+        text: "🚫 Eu preciso ser administrador para banir usuários!",
+      });
+    }
+
+    // Verifica se o usuário mencionado está no grupo
+    const userExists = participants.some((p) => p.id === mentionedUser);
+    if (!userExists) {
+      return await sock.sendMessage(msg.key.remoteJid, {
+        text: "❌ O usuário mencionado não está no grupo!",
+      });
+    }
+
+    // Expulsa o usuário do grupo
+    await sock.groupParticipantsUpdate(
+      msg.key.remoteJid,
+      [mentionedUser],
+      "remove"
     );
-    const isMe = areJidsSameUser(user, clientJid);
-    const hisSelf = areJidsSameUser(user, msg.key.participant);
 
-    if (isMe || hisSelf) {
-      return await sock.sendMessage(msg.key.remoteJid, {
-        text: "⚠ Você não pode se remover ou me remover!",
-      });
-    }
-
-    if (!isMember) {
-      return await sock.sendMessage(msg.key.remoteJid, {
-        text: "⚠ O número a ser removido não está no grupo!",
-      });
-    }
-
-    try {
-      // Remove o usuário do grupo
-      const response = await sock.groupParticipantsUpdate(
-        group.id,
-        [user],
-        "remove"
-      );
-      if (response[0].status === "200") {
-        // Bloqueia o usuário após a remoção
-        await sock.updateBlockStatus(user, "block");
-
-        await sock.sendMessage(msg.key.remoteJid, {
-          text: `✅ Usuário removido e bloqueado com sucesso! @${
-            user.split("@")[0]
-          }`,
-          mentions: [user],
-        });
-      } else {
-        return await sock.sendMessage(msg.key.remoteJid, {
-          text: "⚠ Não foi possível remover o usuário.",
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao remover/bloquear o usuário:", error.message);
-      return await sock.sendMessage(msg.key.remoteJid, {
-        text: "⚠ Ocorreu um erro ao tentar remover ou bloquear o usuário.",
-      });
-    }
+    // Envia mensagem confirmando o banimento
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `✅ O usuário @${args[0].replace(
+        /[@\s]/g,
+        ""
+      )} foi banido com sucesso!`,
+      mentions: [mentionedUser],
+    });
+  } catch (error) {
+    console.error("Erro ao executar o comando de ban:", error);
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: "❌ Ocorreu um erro ao tentar banir o usuário!",
+    });
   }
 };

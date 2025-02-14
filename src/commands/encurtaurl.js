@@ -15,7 +15,7 @@ module.exports = async (msg, sock, url) => {
   } else {
     console.log("Falha ao encurtar a URL.");
     await sock.sendMessage(msg.key.remoteJid, {
-      text: "🛠️ Não foi possível encurtar a URL. Tente novamente mais tarde.",
+      text: "🛠️ Não foi possível encurtar a URL. Você colocou a url corretamente?",
     });
   }
 };

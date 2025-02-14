@@ -15,7 +15,7 @@ module.exports = async function handleSimi(msg, sock, args) {
 
   try {
     const response = await getSimSimiResponse(question);
-    await sendMessageWithReaction(msg, sock, response + `\n\n`, "🐥");
+    await sendMessageWithReaction(msg, sock, response + ``, "🐥");
   } catch (error) {
     await sendMessageWithReaction(
       msg,
@@ -27,7 +27,7 @@ module.exports = async function handleSimi(msg, sock, args) {
 };
 
 async function sendMessageWithReaction(msg, sock, text, emoji) {
-  await sock.sendMessage(msg.key.remoteJid, { text: `${text}\n\n` });
+  await sock.sendMessage(msg.key.remoteJid, { text: `${text}` });
   await sock.sendMessage(msg.key.remoteJid, {
     react: { text: emoji, key: msg.key },
   });

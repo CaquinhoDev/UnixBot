@@ -11,13 +11,8 @@ function formatUptime(ms) {
 }
 
 function getSaudacao(nome) {
-  let hour = new Date().getHours();
-  hour -= 3;
-  if (hour < 0) {
-    hour += 24;
-  }
-
-  console.log("Hora corrigida do sistema:", hour);
+  let hour = new Date().getHours(); // Usa a hora do sistema sem modificações
+  console.log("Hora atual do sistema:", hour);
 
   if (hour < 12) return `Bom dia, ${nome}`;
   if (hour < 18) return `Boa tarde, ${nome}`;

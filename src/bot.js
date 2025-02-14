@@ -168,7 +168,7 @@ async function sendMessageWithReaction(msg, sock, text, emoji) {
 
 async function reactWhileProcessing(msg, sock, callback) {
   await sock.sendMessage(msg.key.remoteJid, {
-    react: { text: "⌛", key: msg.key },
+    react: { text: "⏳", key: msg.key },
   });
   await callback();
   await sock.sendMessage(msg.key.remoteJid, {
@@ -183,6 +183,7 @@ function getCommandHandlers() {
     criador: require("./commands/criador"),
     menu: require("./commands/menu"),
     dono: require("./commands/dono"),
+    ban: require("./commands/ban"),
     gpt: require("./commands/gemini"),
     simi: require("./commands/simi"),
     imagem: require("./commands/imagem"),
