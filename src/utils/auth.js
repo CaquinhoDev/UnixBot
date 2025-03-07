@@ -14,6 +14,7 @@ function getSaudacao(nome) {
   let hour = new Date().getHours(); // Usa a hora do sistema sem modificações
   console.log("Hora atual do sistema:", hour);
 
+  if (hour >= 0 && hour < 6) return `Boa madrugada, ${nome}`;
   if (hour < 12) return `Bom dia, ${nome}`;
   if (hour < 18) return `Boa tarde, ${nome}`;
   return `Boa noite, ${nome}`;

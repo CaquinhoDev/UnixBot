@@ -121,11 +121,11 @@ async function handleMessage({ messages }, sock) {
           contextInfo: {
             quotedMessage: {
               contactMessage: {
-                displayName: "By Caquinho Dev",
+                displayName: "By Pedro 😎",
                 vcard: vcard,
               },
             },
-            participant: "13135550002@s.whatsapp.net",
+            participant: "0@s.whatsapp.net",
           },
         });
 
@@ -205,6 +205,7 @@ function getCommandHandlers() {
     todos: require("./commands/todos"),
     fechar: require("./commands/fechar"),
     abrir: require("./commands/abrir"),
+    shazam: require("./commands/shazam"),
     info: comandoInfo,
   };
 }

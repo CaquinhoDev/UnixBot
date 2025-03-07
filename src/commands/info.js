@@ -1,5 +1,5 @@
 // src/commands/info.js
-const simulateMetaAIResponse = require("../utils/simulateMetaAIResponse");
+const simulateWhatsappResponse = require("../utils/simulateWhatsappResponse");
 
 module.exports = async function comandoInfo(msg, sock) {
   const infoText = `Informações sobre o bot 🤖:\n\n- *Bot: Jarvis*\n- *Versão: 4.0!*\n- *Criador: Pedro Henrique🧑‍💻*\n\n`;
@@ -14,7 +14,7 @@ module.exports = async function comandoInfo(msg, sock) {
   });
 
   // Simula a resposta da META AI
-  await simulateMetaAIResponse(
+  await simulateWhatsappResponse(
     sock,
     msg.key.remoteJid,
     "ℹ️ Obrigado por conferir as informações!"
