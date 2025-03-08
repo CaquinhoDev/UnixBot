@@ -83,6 +83,7 @@ function generateQRCode(qr) {
   });
 }
 
+
 async function handleMessage({ messages }, sock) {
   const msg = messages[0];
 
@@ -148,6 +149,17 @@ async function handleMessage({ messages }, sock) {
     }
   }
 
+  if (msg.message.audioMessage) {
+    try {
+      await require("./commands/shazam")(msg, sock);
+    } catch (error) {
+      console.error("Erro ao processar áudio:", error);
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "Erro ao processar o áudio. Tente novamente.",
+      });
+    }
+  }
+
   if (msg.message.imageMessage) {
     try {
       await createStickerCommand(msg, sock);
@@ -159,6 +171,8 @@ async function handleMessage({ messages }, sock) {
   }
 }
 
+
+
 async function sendMessageWithReaction(msg, sock, text, emoji) {
   await sock.sendMessage(msg.key.remoteJid, { text: `${text}\n\n` });
   await sock.sendMessage(msg.key.remoteJid, {
@@ -167,6 +181,7 @@ async function sendMessageWithReaction(msg, sock, text, emoji) {
 }
 
 async function reactWhileProcessing(msg, sock, callback) {
+  await sock.sendMessage(msg.key.remoteJid, {text: "_🎶 Baixando música, aguarde..._"},  { quoted: msg })
   await sock.sendMessage(msg.key.remoteJid, {
     react: { text: "⏳", key: msg.key },
   });

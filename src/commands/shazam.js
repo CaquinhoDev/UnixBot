@@ -21,7 +21,7 @@ module.exports = async (msg, sock) => {
       return;
     }
 
-    // Verifica se o chat está em modo de escuta e se a mensagem contém áudio
+    
     if (listeningMode[chatId] && message.audioMessage) {
       console.log("[SHAZAM] Áudio detectado, processando...");
 
@@ -46,7 +46,7 @@ module.exports = async (msg, sock) => {
 
         console.log(`[SHAZAM] Tamanho do arquivo baixado: ${buffer.length} bytes`);
 
-        const tempFilePath = path.join(__dirname, "tempAudio.ogg"); // Alterado para .ogg
+        const tempFilePath = path.join(__dirname, "tempAudio.ogg"); 
         await fs.writeFile(tempFilePath, buffer);
         console.log(`[SHAZAM] Arquivo salvo temporariamente em: ${tempFilePath}`);
 
@@ -57,8 +57,7 @@ module.exports = async (msg, sock) => {
         console.log("[SHAZAM] Arquivo temporário deletado.");
 
         if (musicData) {
-          const responseText = `🎶 Música Identificada!\n\nTítulo: ${musicData.title}\nArtista: ${musicData.artist}\nÁlbum: ${musicData.album || "Desconhecido"}\nDuração: ${musicData.duration} segundos\nLink: ${musicData.link || "Não disponível"}`;
-          await sock.sendMessage(chatId, { text: responseText });
+          await sock.sendMessage(chatId, { text: musicData }); 
           console.log("[SHAZAM] Resposta enviada ao usuário.");
         } else {
           await sock.sendMessage(chatId, {
@@ -96,3 +95,4 @@ function streamToBuffer(stream) {
     stream.on("error", (err) => reject(err));
   });
 }
+

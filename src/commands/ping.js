@@ -1,18 +1,16 @@
 module.exports = async function handlePing(msg, sock) {
-  const start = Date.now();
+  const start = Date.now();  // Calculando o tempo antes do envio
+
+  // Enviando a mensagem de ping
   await sock.sendMessage(msg.key.remoteJid, {
-    text: "🏓 Pong! Calculando o tempo de resposta...",
+    text: "🏓 Pong! Calculando o tempo de resposta, só um instante...",
   });
 
-  const end = Date.now();
-  const ping = end - start;
-  const responseText = `📶 Tempo de resposta: ${ping}ms\n\n`;
-  await sendMessageWithReaction(msg, sock, responseText, "🏓");
+  const end = Date.now();  // Calculando o tempo após o envio
+  const ping = end - start;  // Calculando a diferença de tempo
+
+  // Enviando o tempo de resposta
+  await sock.sendMessage(msg.key.remoteJid, {
+    text: `📶 Tempo de resposta: ${ping}ms`,
+  });
 };
-
-async function sendMessageWithReaction(msg, sock, text, emoji) {
-  await sock.sendMessage(msg.key.remoteJid, { text: `${text}` });
-  await sock.sendMessage(msg.key.remoteJid, {
-    react: { text: emoji, key: msg.key },
-  });
-}
