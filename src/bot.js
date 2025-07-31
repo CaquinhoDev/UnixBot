@@ -27,6 +27,7 @@ async function startBot() {
     printQRInTerminal: false,
     logger: pino({ level: "silent" }),
     browser: ["CaquinhoDev", "", ""],
+    version: [2, 3000, 1023223821],
   });
 
   sock.ev.on("creds.update", saveCreds);
