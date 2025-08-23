@@ -84,7 +84,6 @@ function generateQRCode(qr) {
   });
 }
 
-
 async function handleMessage({ messages }, sock) {
   const msg = messages[0];
 
@@ -172,8 +171,6 @@ async function handleMessage({ messages }, sock) {
   }
 }
 
-
-
 async function sendMessageWithReaction(msg, sock, text, emoji) {
   await sock.sendMessage(msg.key.remoteJid, { text: `${text}\n\n` });
   await sock.sendMessage(msg.key.remoteJid, {
@@ -182,7 +179,11 @@ async function sendMessageWithReaction(msg, sock, text, emoji) {
 }
 
 async function reactWhileProcessing(msg, sock, callback) {
-  await sock.sendMessage(msg.key.remoteJid, {text: "_🎶 Baixando música, aguarde..._"},  { quoted: msg })
+  await sock.sendMessage(
+    msg.key.remoteJid,
+    { text: "_🎶 Baixando música, aguarde..._" },
+    { quoted: msg }
+  );
   await sock.sendMessage(msg.key.remoteJid, {
     react: { text: "⏳", key: msg.key },
   });
@@ -216,6 +217,7 @@ function getCommandHandlers() {
     convite: require("./commands/convite"),
     noticias: require("./commands/noticias"),
     pix: require("./commands/pix"),
+    revelar: require("./commands/revelar"),
     uptime: require("./commands/uptime"),
     sorteio: require("./commands/sorteio"),
     todos: require("./commands/todos"),

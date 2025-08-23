@@ -13,7 +13,8 @@ module.exports = async function handleMenu(msg, sock) {
 🔒 !fechar (admin)
 🔓 !abrir (admin) 
 📝 !menu        
-📸 !imagem      
+📸 !imagem
+📸 !revelar      
 📞 !ddd         
 🎉 !sorteio     
 😂 !piada       
