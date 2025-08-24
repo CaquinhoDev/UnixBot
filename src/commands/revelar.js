@@ -20,7 +20,7 @@ module.exports = async function handleRevelar(msg, sock, reagir) {
     msg.message?.viewOnceMessage ||
     msg.message?.viewOnceMessageV2;
 
-  const content = viewOnce?.message || quoted || message.message;
+  const content = viewOnce?.message || quoted || msg.message;
   const image = content?.imageMessage;
   const video = content?.videoMessage;
   const audio = content?.audioMessage;
