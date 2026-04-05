@@ -6,6 +6,10 @@ module.exports = async function handlePing(msg, sock) {
     text: "🏓 Pong! Calculando o tempo de resposta, só um instante...",
   });
 
+  await sock.sendMessage(msg.key.remoteJid, {
+    react: { text: "🏓", key: msg.key },
+  });
+
   const end = Date.now();  // Calculando o tempo após o envio
   const ping = end - start;  // Calculando a diferença de tempo
 

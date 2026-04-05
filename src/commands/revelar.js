@@ -25,7 +25,7 @@ module.exports = async function handleRevelar(msg, sock, reagir) {
   const video = content?.videoMessage;
   const audio = content?.audioMessage;
 
-  const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
+  const { downloadContentFromMessage } = require("baileys");
 
   async function getBuffer(media, tipo) {
     const stream = await downloadContentFromMessage(media, tipo);

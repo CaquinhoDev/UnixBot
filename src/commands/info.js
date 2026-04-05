@@ -2,8 +2,8 @@
 const simulateWhatsappResponse = require("../utils/simulateWhatsappResponse");
 
 module.exports = async function comandoInfo(msg, sock) {
-  const infoText = `Informações sobre o bot 🤖:\n\n- *Bot: Jarvis*\n- *Versão: 4.0!*\n- *Criador: Pedro Henrique🧑‍💻*\n\n`;
-  const messageEnd = "\nObrigado por usar o Jarvis";
+  const infoText = `Informações sobre o bot 🤖:\n\n- *Bot: UnixBot*\n- *Versão: 5.0! (finalmente update)*\n- *Criador: Pedro Henrique🧑‍💻*\n\n`;
+  const messageEnd = "\nObrigado por usar o UnixBot";
 
   // Envia a mensagem padrão
   await sock.sendMessage(msg.key.remoteJid, {
@@ -14,9 +14,5 @@ module.exports = async function comandoInfo(msg, sock) {
   });
 
   // Simula a resposta da META AI
-  await simulateWhatsappResponse(
-    sock,
-    msg.key.remoteJid,
-    "ℹ️ Obrigado por conferir as informações!"
-  );
+  await simulateWhatsappResponse(sock, msg.key.remoteJid, "by pedrin");
 };

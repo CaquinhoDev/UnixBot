@@ -2,12 +2,13 @@ const {
   makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
-} = require("@whiskeysockets/baileys");
+} = require("baileys");
 const pino = require("pino");
 const fs = require("fs");
 const path = require("path");
 const qrcode = require("qrcode");
-const { PREFIX, OWNER_PHONE_NUMBER } = require("./config");
+
+const { PREFIXES, OWNER_PHONE_NUMBER } = require("./config");
 const comandoInfo = require("./commands/info");
 const { downloadYouTubeVideo } = require("./commands/play");
 const { createStickerCommand } = require("./commands/sticker");
@@ -26,13 +27,13 @@ async function startBot() {
     auth: state,
     printQRInTerminal: false,
     logger: pino({ level: "silent" }),
-    browser: ["CaquinhoDev", "", ""],
-    version: [2, 3000, 1023223821],
+    browser: ["CaquinhoDev", "Safari", ""],
+    //version: [2, 3000, 1023223821],
   });
 
   sock.ev.on("creds.update", saveCreds);
   sock.ev.on("connection.update", (update) =>
-    handleConnectionUpdate(update, sock)
+    handleConnectionUpdate(update, sock),
   );
   sock.ev.on("messages.upsert", async (m) => await handleMessage(m, sock));
 
@@ -86,20 +87,56 @@ function generateQRCode(qr) {
 
 async function handleMessage({ messages }, sock) {
   const msg = messages[0];
+  const message = msg;
 
   if (!msg.message || msg.key.fromMe) return;
 
   const from = msg.key.remoteJid;
 
-  const text =
-    msg.message.conversation || msg.message.extendedTextMessage?.text;
+  const msgType = Object.keys(message.message)[0];
 
-  if (text && text.startsWith(PREFIX)) {
-    const commandText = text.slice(PREFIX.length).trim().toLowerCase();
+  let text =
+    msg.message.conversation ||
+    msg.message.extendedTextMessage?.text ||
+    msg.message.imageMessage?.caption ||
+    msg.message.videoMessage?.caption;
+
+  // Se for botão, lista ou interativo → converte pra texto normal
+  const selectedId =
+    message?.message?.templateButtonReplyMessage?.selectedId ||
+    message?.message?.buttonsResponseMessage?.selectedButtonId ||
+    message?.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+    (msgType === "interactiveResponseMessage"
+      ? JSON.parse(
+          message.message.interactiveResponseMessage.nativeFlowResponseMessage
+            .paramsJson,
+        ).id
+      : null);
+
+  // Se veio botão, transforma em comando de texto
+  if (!text && selectedId) {
+    text = PREFIXES + selectedId;
+  }
+
+  if (!text) return;
+
+  const lowerText = text.trim().toLowerCase();
+
+  // Detecta se começa com algum prefixo
+  const usedPrefix = PREFIXES.find((p) => lowerText.startsWith(p));
+
+  if (usedPrefix) {
+    const commandText = lowerText.slice(usedPrefix.length).trim();
     const [command, ...args] = commandText.split(" ");
 
     if (command === "checkurl") {
       await checkUrlCommand(msg, sock, args);
+      return;
+    }
+
+    // Comando de sticker com prefixo
+    if (command === "s" || command === "sticker" || command === "figurinha") {
+      await createStickerCommand(msg, sock);
       return;
     }
 
@@ -144,7 +181,7 @@ async function handleMessage({ messages }, sock) {
         msg,
         sock,
         "*Comando não encontrado. Tente novamente.*",
-        "❌"
+        "❌",
       );
     }
   }
@@ -160,13 +197,66 @@ async function handleMessage({ messages }, sock) {
     }
   }
 
+  // Sticker automático quando usuario responde a imagem com comando
+  if (
+    msg.message.imageMessage ||
+    (msg.message.extendedTextMessage &&
+      msg.contextInfo?.quotedMessage?.imageMessage)
+  ) {
+    // Verifica se é resposta a imagem com comando de sticker
+    const isReplyToImage =
+      msg.contextInfo?.quotedMessage?.imageMessage || msg.message.imageMessage;
+
+    if (isReplyToImage && text) {
+      const lowerText = text.trim().toLowerCase();
+      const usedPrefix = PREFIXES.find((p) => lowerText.startsWith(p));
+
+      if (usedPrefix) {
+        const commandText = lowerText.slice(usedPrefix.length).trim();
+        const [command] = commandText.split(" ");
+
+        if (
+          command === "s" ||
+          command === "sticker" ||
+          command === "figurinha"
+        ) {
+          try {
+            // Se é resposta a imagem, usa a imagem citada
+            if (msg.contextInfo?.quotedMessage?.imageMessage) {
+              const quotedMsg = {
+                message: msg.contextInfo.quotedMessage,
+                key: msg.contextInfo.stanzaId
+                  ? {
+                      remoteJid: msg.key.remoteJid,
+                      fromMe: false,
+                      id: msg.contextInfo.stanzaId,
+                    }
+                  : msg.key,
+              };
+              await createStickerCommand(quotedMsg, sock);
+            } else {
+              // Se é imagem com legenda
+              await createStickerCommand(msg, sock);
+            }
+          } catch (error) {
+            console.error("Erro ao processar figurinha:", error);
+            await sock.sendMessage(msg.key.remoteJid, {
+              text: "Erro ao criar figurinha. Tente novamente.",
+            });
+          }
+          return;
+        }
+      }
+    }
+  }
+
   if (msg.message.imageMessage) {
-    try {
-      await createStickerCommand(msg, sock);
-    } catch {
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: "Erro ao criar figurinha. Tente novamente.",
-      });
+    // Só cria figurinha automaticamente se NÃO tiver comando na legenda
+    const imageCaption = msg.message.imageMessage?.caption;
+    if (imageCaption) {
+      const lowerCaption = imageCaption.trim().toLowerCase();
+      const hasPrefix = PREFIXES.find((p) => lowerCaption.startsWith(p));
+      if (hasPrefix) return; // Se tem comando, já foi processado acima
     }
   }
 }
@@ -182,7 +272,7 @@ async function reactWhileProcessing(msg, sock, callback) {
   await sock.sendMessage(
     msg.key.remoteJid,
     { text: "_🎶 Baixando música, aguarde..._" },
-    { quoted: msg }
+    { quoted: msg },
   );
   await sock.sendMessage(msg.key.remoteJid, {
     react: { text: "⏳", key: msg.key },

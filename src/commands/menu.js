@@ -13,8 +13,8 @@ module.exports = async function handleMenu(msg, sock) {
 🔒 !fechar (admin)
 🔓 !abrir (admin) 
 📝 !menu        
-📸 !imagem
-📸 !revelar      
+📸 !imagem      
+📸 !revelar
 📞 !ddd         
 🎉 !sorteio     
 😂 !piada       
@@ -31,7 +31,7 @@ module.exports = async function handleMenu(msg, sock) {
 🔍 !pesquisar   
 
 
-🚨 Envie uma foto para fazer figurinhas!
+🚨 Para fazer figurinha, basta mandar uma mensagem de foto contendo no titulo !s !sticker ou !figurinha
 `;
 
   await sendMessageWithReaction(msg, sock, menu, "📜");

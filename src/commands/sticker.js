@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
-const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+const { downloadMediaMessage } = require("baileys");
 const ffmpeg = require("fluent-ffmpeg");
 
 // Caminho para o diretório de stickers
@@ -13,19 +13,40 @@ if (!fs.existsSync(stickersDir)) {
   fs.mkdirSync(stickersDir, { recursive: true });
 }
 
-async function createStaticSticker(inputPath, outputPath) {
+async function createStaticSticker(inputPath, outputPath, isStretched = false) {
   try {
-    await sharp(inputPath)
-      .resize(512, 512) // Redimensiona para 512x512
-      .webp({ quality: 50 }) // Define qualidade para 50%
-      .toFile(outputPath);
+    let options;
+    if (isStretched) {
+      // Esticado - ignora aspect ratio e faz fit completo
+      options = sharp(inputPath).resize(512, 512, {
+        fit: "fill",
+      });
+    } else {
+      // Normal - mantém aspect ratio
+      options = sharp(inputPath).resize(512, 512, {
+        fit: "contain",
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+      });
+    }
+
+    await options.webp({ quality: 50 }).toFile(outputPath);
 
     let stickerSize = fs.statSync(outputPath).size;
     while (stickerSize > MAX_STATIC_SIZE) {
-      await sharp(inputPath)
-        .resize(512, 512)
-        .webp({ quality: 30 }) // Reduz ainda mais a qualidade
-        .toFile(outputPath);
+      if (isStretched) {
+        await sharp(inputPath)
+          .resize(512, 512, { fit: "fill" })
+          .webp({ quality: 30 })
+          .toFile(outputPath);
+      } else {
+        await sharp(inputPath)
+          .resize(512, 512, {
+            fit: "contain",
+            background: { r: 255, g: 255, b: 255, alpha: 0 },
+          })
+          .webp({ quality: 30 })
+          .toFile(outputPath);
+      }
       stickerSize = fs.statSync(outputPath).size;
     }
   } catch (error) {
@@ -66,7 +87,11 @@ async function createStickerCommand(msg, sock) {
     const mediaMessage = isVideo ? message.videoMessage : message.imageMessage;
     const extension = isVideo ? ".mp4" : ".png";
     const inputPath = path.resolve(stickersDir, `input${extension}`);
-    const outputPath = path.resolve(stickersDir, "sticker.webp");
+    const outputPathNormal = path.resolve(stickersDir, "sticker_normal.webp");
+    const outputPathStretched = path.resolve(
+      stickersDir,
+      "sticker_stretched.webp",
+    );
 
     // Faz download da mídia
     const mediaStream = await downloadMediaMessage(msg, {
@@ -84,18 +109,31 @@ async function createStickerCommand(msg, sock) {
     const buffer = await streamToBuffer(mediaStream);
     fs.writeFileSync(inputPath, buffer);
 
-    // Cria e envia a figurinha
+    // Cria e envia as figurinhas
     if (isVideo) {
-      await createAnimatedSticker(inputPath, outputPath);
-      const stickerBuffer = fs.readFileSync(outputPath);
+      // Para vídeo, cria apenas a versão normal (gif animado)
+      await createAnimatedSticker(inputPath, outputPathNormal);
+      const stickerBuffer = fs.readFileSync(outputPathNormal);
       await sock.sendMessage(msg.key.remoteJid, {
         sticker: stickerBuffer,
         gifPlayback: true,
       });
     } else {
-      await createStaticSticker(inputPath, outputPath);
-      const stickerBuffer = fs.readFileSync(outputPath);
-      await sock.sendMessage(msg.key.remoteJid, { sticker: stickerBuffer });
+      // Para imagem, cria as 2 versões
+      await createStaticSticker(inputPath, outputPathNormal, false);
+      const stickerBufferNormal = fs.readFileSync(outputPathNormal);
+      await sock.sendMessage(msg.key.remoteJid, {
+        sticker: stickerBufferNormal,
+      });
+
+      // Aguarda um pouco antes de enviar a segunda
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      await createStaticSticker(inputPath, outputPathStretched, true);
+      const stickerBufferStretched = fs.readFileSync(outputPathStretched);
+      await sock.sendMessage(msg.key.remoteJid, {
+        sticker: stickerBufferStretched,
+      });
     }
   } catch (error) {
     console.error("Erro no comando !sticker:", error);

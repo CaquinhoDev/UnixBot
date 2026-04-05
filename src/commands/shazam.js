@@ -1,7 +1,6 @@
-
 const fs = require("fs").promises;
 const path = require("path");
-const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+const { downloadMediaMessage } = require("baileys");
 const { enviarAudioParaAPI } = require("../utils/shazam-api");
 
 const listeningMode = {};
@@ -14,14 +13,20 @@ module.exports = async (msg, sock) => {
     console.log("[SHAZAM] Função de Shazam chamada!");
     console.log("[SHAZAM] Mensagem recebida:", JSON.stringify(msg, null, 2));
 
-    if (message.extendedTextMessage && message.extendedTextMessage.text === "!shazam") {
-      console.log("[SHAZAM] Comando !shazam detectado, entrando em modo de escuta...");
+    if (
+      message.extendedTextMessage &&
+      message.extendedTextMessage.text === "!shazam"
+    ) {
+      console.log(
+        "[SHAZAM] Comando !shazam detectado, entrando em modo de escuta..."
+      );
       listeningMode[chatId] = true;
-      await sock.sendMessage(chatId, { text: "Modo Shazam ativado. Envie o áudio que deseja identificar." });
+      await sock.sendMessage(chatId, {
+        text: "Modo Shazam ativado. Envie o áudio que deseja identificar.",
+      });
       return;
     }
 
-    
     if (listeningMode[chatId] && message.audioMessage) {
       console.log("[SHAZAM] Áudio detectado, processando...");
 
@@ -44,11 +49,15 @@ module.exports = async (msg, sock) => {
           throw new Error("O arquivo está vazio.");
         }
 
-        console.log(`[SHAZAM] Tamanho do arquivo baixado: ${buffer.length} bytes`);
+        console.log(
+          `[SHAZAM] Tamanho do arquivo baixado: ${buffer.length} bytes`
+        );
 
-        const tempFilePath = path.join(__dirname, "tempAudio.ogg"); 
+        const tempFilePath = path.join(__dirname, "tempAudio.ogg");
         await fs.writeFile(tempFilePath, buffer);
-        console.log(`[SHAZAM] Arquivo salvo temporariamente em: ${tempFilePath}`);
+        console.log(
+          `[SHAZAM] Arquivo salvo temporariamente em: ${tempFilePath}`
+        );
 
         console.log("[SHAZAM] Enviando áudio para a API...");
         const musicData = await enviarAudioParaAPI(tempFilePath);
@@ -57,7 +66,7 @@ module.exports = async (msg, sock) => {
         console.log("[SHAZAM] Arquivo temporário deletado.");
 
         if (musicData) {
-          await sock.sendMessage(chatId, { text: musicData }); 
+          await sock.sendMessage(chatId, { text: musicData });
           console.log("[SHAZAM] Resposta enviada ao usuário.");
         } else {
           await sock.sendMessage(chatId, {
@@ -95,4 +104,3 @@ function streamToBuffer(stream) {
     stream.on("error", (err) => reject(err));
   });
 }
-
