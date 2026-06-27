@@ -6,7 +6,7 @@ const {
 const pino = require("pino");
 const fs = require("fs");
 const path = require("path");
-const qrcode = require("qrcode");
+const readline = require("readline");
 
 const { PREFIXES, OWNER_PHONE_NUMBER } = require("./config");
 const comandoInfo = require("./commands/info");
@@ -17,6 +17,38 @@ const { checkUrlCommand } = require("./commands/checkurl");
 let botStartTime = Date.now();
 let stickerMode = false;
 
+// Interface readline para pair code
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const pergunta = (texto) => new Promise((resolve) => rl.question(texto, resolve));
+
+async function solicitarPairCode(sock) {
+  let numero = "";
+
+  while (!numero) {
+    numero = await pergunta(
+      "\nDigite o seu número para receber o código de verificação,\n" +
+      "apenas o número, sem espaços ou caracteres especiais\n" +
+      "(ex: 5511999999999): "
+    );
+
+    numero = numero.replace(/[^0-9]/g, "").trim();
+
+    if (!numero) {
+      console.log("❌ Número inválido. Tente novamente.\n");
+    }
+  }
+
+  try {
+    const codigo = await sock.requestPairingCode(numero);
+    console.log("\n✅ Código de emparelhamento gerado!");
+    console.log(`👉 Código: ${codigo}`);
+    console.log("\nAbra o WhatsApp → Dispositivos conectados → Conectar dispositivo → Código de 8 dígitos\n");
+  } catch (erro) {
+    console.error("❌ Erro ao gerar o código de emparelhamento:", erro.message);
+    process.exit(1);
+  }
+}
+
 async function startBot() {
   console.log("Iniciando o bot...");
 
@@ -25,11 +57,15 @@ async function startBot() {
 
   const sock = makeWASocket({
     auth: state,
-    printQRInTerminal: false,
+    printQRInTerminal: false, // QR code desativado — usando pair code
     logger: pino({ level: "silent" }),
     browser: ["CaquinhoDev", "Safari", ""],
-    //version: [2, 3000, 1023223821],
+    version: (await (await fetch('https://raw.githubusercontent.com/WhiskeySockets/Baileys/master/src/Defaults/baileys-version.json')).json()).version,
   });
+
+  if (!sock.authState.creds.registered) {
+    await solicitarPairCode(sock);
+  }
 
   sock.ev.on("creds.update", saveCreds);
   sock.ev.on("connection.update", (update) =>
@@ -52,37 +88,24 @@ async function startBot() {
 }
 
 function handleConnectionUpdate(update, sock) {
-  const { connection, qr, lastDisconnect } = update;
+  const { connection, lastDisconnect } = update;
 
   if (connection === "open") {
-    console.log("Conexão aberta com sucesso!");
-  }
-
-  if (qr) {
-    console.log("QR Code Recebido!");
-    generateQRCode(qr);
+    console.log("✅ Conexão aberta com sucesso!");
   }
 
   if (connection === "close") {
     const shouldReconnect =
-      lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+
     if (shouldReconnect) {
       console.log("Reconectando...");
       startBot();
     } else {
-      console.log("Bot foi desconectado permanentemente.");
+      console.log("❌ Bot desconectado permanentemente. Apague a pasta auth_info e reinicie.");
+      process.exit(0);
     }
   }
-}
-
-function generateQRCode(qr) {
-  const qrImagePath = path.join(__dirname, "QRCODE", "qr-code.png");
-  const qrDir = path.dirname(qrImagePath);
-  if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
-
-  qrcode.toFile(qrImagePath, qr, { type: "png" }, (err) => {
-    if (err) console.error("Erro ao gerar o QR code: ", err);
-  });
 }
 
 async function handleMessage({ messages }, sock) {
