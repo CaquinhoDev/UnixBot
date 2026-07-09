@@ -14,7 +14,7 @@
     "@hapi/boom": "^10.0.1",
     "@vitalets/google-translate-api": "^9.2.0",
     "axios": "^1.7.5",
-    "baileys": "^7.0.0-rc.9",
+    "baileys": "^7.0.0-rc13",
     "dotenv": "^16.4.5",
     "file-type": "^16.5.3",
     "fluent-ffmpeg": "^2.1.3",
