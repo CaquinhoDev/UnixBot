@@ -2,6 +2,7 @@ const {
   makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
+  Browsers,
 } = require("baileys");
 const pino = require("pino");
 const fs = require("fs");
@@ -17,7 +18,7 @@ const { checkUrlCommand } = require("./commands/checkurl");
 let botStartTime = Date.now();
 let stickerMode = false;
 
-// Interface readline para pair code
+// Cria o rl UMA vez, fora de qualquer função, igual ao primeiro bot
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const pergunta = (texto) => new Promise((resolve) => rl.question(texto, resolve));
 
@@ -43,6 +44,7 @@ async function solicitarPairCode(sock) {
     console.log("\n✅ Código de emparelhamento gerado!");
     console.log(`👉 Código: ${codigo}`);
     console.log("\nAbra o WhatsApp → Dispositivos conectados → Conectar dispositivo → Código de 8 dígitos\n");
+    //rl.close(); // Fecha o readline após uso, igual ao comportamento esperado
   } catch (erro) {
     console.error("❌ Erro ao gerar o código de emparelhamento:", erro.message);
     process.exit(1);
@@ -57,12 +59,14 @@ async function startBot() {
 
   const sock = makeWASocket({
     auth: state,
-    printQRInTerminal: false, // QR code desativado — usando pair code
+    printQRInTerminal: false,
     logger: pino({ level: "silent" }),
-    browser: ["CaquinhoDev", "Safari", ""],
+    //browser: ["CaquinhoDev", "Safari", ""],
+    browser: Browsers.macOS("Safari"),
     version: (await (await fetch('https://raw.githubusercontent.com/WhiskeySockets/Baileys/master/src/Defaults/baileys-version.json')).json()).version,
   });
 
+  // Solicita pair code apenas se ainda não estiver autenticado
   if (!sock.authState.creds.registered) {
     await solicitarPairCode(sock);
   }
@@ -103,7 +107,7 @@ function handleConnectionUpdate(update, sock) {
       startBot();
     } else {
       console.log("❌ Bot desconectado permanentemente. Apague a pasta auth_info e reinicie.");
-      process.exit(0);
+      //process.exit(0);
     }
   }
 }
@@ -341,4 +345,11 @@ function getCommandHandlers() {
   };
 }
 
-startBot();
+//startBot();
+(async () => {
+  try {
+    await startBot();
+  } catch (error) {
+    console.error("erro ao iniciar sessão:", error)
+  }
+})();
